@@ -1,16 +1,11 @@
 #include "../interface/PatternGenerator.h"
 
-PatternGenerator::PatternGenerator(int sp){
-  superStripSize = sp;
+PatternGenerator::PatternGenerator(){
   variableRes = 0;
   ptMin=2;
   ptMax=100;
   etaMin=0.0f;
   etaMax=1.0f;
-}
-
-void PatternGenerator::setSuperStripSize(int sp){
-  superStripSize = sp;
 }
 
 void PatternGenerator::setMinPT(float minp){
@@ -126,9 +121,6 @@ int PatternGenerator::generate(TChain* TT, int* evtIndex, int evtNumber, int* nb
     return -1;
   }
   vector<Pattern*> patterns;
-
-  if(coverageEstimation==NULL)
-    sectors->setSuperStripSize(superStripSize);
 
   //--> Signification (et dimension) des variables
 
@@ -315,17 +307,16 @@ int PatternGenerator::generate(TChain* TT, int* evtIndex, int evtNumber, int* nb
 	module = value/100;
 	value = value-module*100;
 	seg = value;
-	//cout<<" ladder : "<<ladder<<" module : "<<module<<" segment : "<<seg<<endl;
-	
+
+	seg = CMSPatternLayer::getSegmentCode(tracker_layers[j], CMSPatternLayer::getLadderCode(tracker_layers[j],ladder), seg);	
+	//convertion to sector relative positions
 	module = sector->getModuleCode(tracker_layers[j], CMSPatternLayer::getLadderCode(tracker_layers[j],ladder), CMSPatternLayer::getModuleCode(tracker_layers[j],module));
 	ladder=sector->getLadderCode(tracker_layers[j],CMSPatternLayer::getLadderCode(tracker_layers[j],ladder));
 	
-	//	cout<<"Layer "<<tracker_layers[j]<<" ladder "<<m_stub_ladder[stub_number]<<" module "<<m_stub_module[stub_number]<<" devient ladder "<<ladder<<" module "<<module<<endl;
-	strip = m_stub_strip[stub_number]/superStripSize;
+	strip = m_stub_strip[stub_number]/sectors->getSuperStripSize(tracker_layers[j]);
 	if(variableRes){
 	  stripLD = strip/ld_fd_factor;
 	}
-	seg =  CMSPatternLayer::getSegmentCode(tracker_layers[j], CMSPatternLayer::getLadderCode(tracker_layers[j],ladder), seg);
       }
       /*
       cout<<"Event "<<*evtIndex<<endl;

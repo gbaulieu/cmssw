@@ -120,7 +120,7 @@ TrackFindingAMProducer::TrackFindingAMProducer( const edm::ParameterSet& iConfig
     }
   }  
 
-  m_pf = new PatternFinder( m_st.getSuperStripSize(), nThresh, &m_st, "", "" );
+  m_pf = new PatternFinder( nThresh, &m_st, "", "" );
 
   if(nMissingHits>-1)
   {

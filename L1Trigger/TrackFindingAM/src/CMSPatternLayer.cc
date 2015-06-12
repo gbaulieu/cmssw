@@ -11,8 +11,8 @@ short CMSPatternLayer::SEG_MASK = 0x0;
 short CMSPatternLayer::OUTER_LAYER_SEG_DIVIDE = 2;
 short CMSPatternLayer::INNER_LAYER_SEG_DIVIDE = 2;
 
-map<string, int> CMSPatternLayer::phi_lut = loadPhiLUT("lut.txt");
-map<string, int> CMSPatternLayer::z_lut = loadZLUT("lut.txt");
+map<string, int> CMSPatternLayer::phi_lut = loadPhiLUT("/scratch/lut.txt");
+map<string, int> CMSPatternLayer::z_lut = loadZLUT("/scratch/lut.txt");
 
 CMSPatternLayer::CMSPatternLayer():PatternLayer(){
 

@@ -108,6 +108,7 @@ void PatternFinder::mergeFiles(string outputFile, string inputFile1, string inpu
   int *input1_superStrip_layer_6 = new int[MAX_NB_PATTERNS];
   int *input1_superStrip_layer_7 = new int[MAX_NB_PATTERNS];
   int *input1_pattern_sector_id = new int[MAX_NB_PATTERNS];
+  float  *input1_pattern_pt = new float[MAX_NB_PATTERNS];
 
   //Array containing the strips arrays
   int* input1_superStrips[MAX_NB_LAYERS];
@@ -187,6 +188,7 @@ void PatternFinder::mergeFiles(string outputFile, string inputFile1, string inpu
   PATT1->SetBranchAddress("nbStubsInPat",        &input1_sel_nb_stubs); // nombre de stubs uniques dans les patterns
   PATT1->SetBranchAddress("eventID",             &input1_event_id); // ID de l'evenement (le meme que dans le fichier de simulation)
   PATT1->SetBranchAddress("sectorID",            input1_pattern_sector_id);// ID du secteur du pattern (permet de retrouver le secteur dans le premier TTree)
+  PATT1->SetBranchAddress("patternPT",           input1_pattern_pt);
   PATT1->SetBranchAddress("superStrip0",         input1_superStrip_layer_0);// tableau de superstrips pour le layer 0
   PATT1->SetBranchAddress("superStrip1",         input1_superStrip_layer_1);
   PATT1->SetBranchAddress("superStrip2",         input1_superStrip_layer_2);
@@ -226,7 +228,6 @@ void PatternFinder::mergeFiles(string outputFile, string inputFile1, string inpu
 
   /*********************INPUT 2 FILE *************************************/
 
-
   TChain *PATT2    = new TChain("Patterns"); // infos about patterns
   TChain *SEC2    = new TChain("Sectors");   //infos about sectors
   PATT2->Add(inputFile2.c_str());
@@ -246,6 +247,7 @@ void PatternFinder::mergeFiles(string outputFile, string inputFile1, string inpu
   int *input2_superStrip_layer_6 = new int[MAX_NB_PATTERNS];
   int *input2_superStrip_layer_7 = new int[MAX_NB_PATTERNS];
   int *input2_pattern_sector_id = new int[MAX_NB_PATTERNS];
+  float  *input2_pattern_pt = new float[MAX_NB_PATTERNS];
 
   //Array containing the strips arrays
   int* input2_superStrips[MAX_NB_LAYERS];
@@ -325,6 +327,7 @@ void PatternFinder::mergeFiles(string outputFile, string inputFile1, string inpu
   PATT2->SetBranchAddress("nbStubsInPat",        &input2_sel_nb_stubs); // nombre de stubs uniques dans les patterns
   PATT2->SetBranchAddress("eventID",             &input2_event_id); // ID de l'evenement (le meme que dans le fichier de simulation)
   PATT2->SetBranchAddress("sectorID",            input2_pattern_sector_id);// ID du secteur du pattern (permet de retrouver le secteur dans le premier TTree)
+  PATT2->SetBranchAddress("patternPT",           input2_pattern_pt);
   PATT2->SetBranchAddress("superStrip0",         input2_superStrip_layer_0);// tableau de superstrips pour le layer 0
   PATT2->SetBranchAddress("superStrip1",         input2_superStrip_layer_1);
   PATT2->SetBranchAddress("superStrip2",         input2_superStrip_layer_2);
@@ -381,6 +384,7 @@ void PatternFinder::mergeFiles(string outputFile, string inputFile1, string inpu
   int *superStrip_layer_6 = new int[MAX_NB_OUTPUT_PATTERNS];
   int *superStrip_layer_7 = new int[MAX_NB_OUTPUT_PATTERNS];
   int *pattern_sector_id = new int[MAX_NB_OUTPUT_PATTERNS];
+  float  *pattern_pt = new float[MAX_NB_OUTPUT_PATTERNS];
 
   //Array containing the strips arrays
   int* superStrips[MAX_NB_LAYERS];
@@ -465,6 +469,7 @@ void PatternFinder::mergeFiles(string outputFile, string inputFile1, string inpu
   PATTOUT->Branch("nbStubsInPat",        &sel_nb_stubs);
   PATTOUT->Branch("eventID",             &event_id);
   PATTOUT->Branch("sectorID",            pattern_sector_id, "sectorID[nbPatterns]/I");
+  PATTOUT->Branch("patternPT",           pattern_pt, "patternPT[nbPatterns]/F");
   PATTOUT->Branch("superStrip0",         superStrip_layer_0, "superStrip0[nbPatterns]/I");
   PATTOUT->Branch("superStrip1",         superStrip_layer_1, "superStrip1[nbPatterns]/I");
   PATTOUT->Branch("superStrip2",         superStrip_layer_2, "superStrip2[nbPatterns]/I");
@@ -500,7 +505,6 @@ void PatternFinder::mergeFiles(string outputFile, string inputFile1, string inpu
   PATTOUT->Branch("stub_Z0",             hit_Z0, "stub_Z0[total_nb_stubs]/F");
   PATTOUT->Branch("stub_bend",             hit_bend, "stub_bend[total_nb_stubs]/F");
   
-
   /*********************************************/
 
   /******************** MERGING SECTOR DATA************************/
@@ -549,9 +553,10 @@ void PatternFinder::mergeFiles(string outputFile, string inputFile1, string inpu
   }
   
   for(int i=0;i<nb_entries1;i++){
+    
     PATT1->GetEntry(i);
     PATT2->GetEntry(i); 
-
+    
     event_id = input1_event_id;
     nb_layers = input1_nb_layers;
 
@@ -559,9 +564,10 @@ void PatternFinder::mergeFiles(string outputFile, string inputFile1, string inpu
       cout<<"Cannot find event "<<event_id<<" in file "<<inputFile2<<" -> DROP EVENT"<<endl;
       break;
     }
-
+    
     memset(pattern_sector_id,0,MAX_NB_OUTPUT_PATTERNS*sizeof(int));
-
+    memset(pattern_pt,0,MAX_NB_OUTPUT_PATTERNS*sizeof(float));
+    
     nb_patterns = input1_nb_patterns+input2_nb_patterns;
 
     if(nb_patterns>MAX_NB_OUTPUT_PATTERNS){
@@ -577,7 +583,10 @@ void PatternFinder::mergeFiles(string outputFile, string inputFile1, string inpu
 
     memcpy(pattern_sector_id,input1_pattern_sector_id,input1_nb_patterns*sizeof(int));
     memcpy(pattern_sector_id+input1_nb_patterns,input2_pattern_sector_id,input2_nb_patterns*sizeof(int));
-    
+
+    memcpy(pattern_pt,input1_pattern_pt,input1_nb_patterns*sizeof(float));
+    memcpy(pattern_pt+input1_nb_patterns,input2_pattern_pt,input2_nb_patterns*sizeof(float));
+
     for(int j=0;j<nb_layers;j++){
       memcpy(superStrips[j],input1_superStrips[j],input1_nb_patterns*sizeof(int));
       memcpy(superStrips[j]+input1_nb_patterns,input2_superStrips[j],input2_nb_patterns*sizeof(int));
@@ -658,8 +667,9 @@ void PatternFinder::mergeFiles(string outputFile, string inputFile1, string inpu
 
     memcpy(hit_bend,input1_hit_bend,input1_totalNbHits*sizeof(float));
     memcpy(hit_bend+input1_totalNbHits,input2_hit_bend,input2_totalNbHits*sizeof(float));
-
+    
     PATTOUT->Fill();
+
   }
 
   PATTOUT->Write();
@@ -675,6 +685,7 @@ void PatternFinder::mergeFiles(string outputFile, string inputFile1, string inpu
   delete [] input1_superStrip_layer_6;
   delete [] input1_superStrip_layer_7;
   delete [] input1_pattern_sector_id;
+  delete [] input1_pattern_pt;
 
   delete [] input1_nbHitPerPattern;
   delete [] input1_track_pt;
@@ -700,7 +711,7 @@ void PatternFinder::mergeFiles(string outputFile, string inputFile1, string inpu
   delete [] input1_hit_Y0;
   delete [] input1_hit_Z0;
   delete [] input1_hit_bend;
-  
+
   delete [] input2_superStrip_layer_0;
   delete [] input2_superStrip_layer_1;
   delete [] input2_superStrip_layer_2;
@@ -710,6 +721,7 @@ void PatternFinder::mergeFiles(string outputFile, string inputFile1, string inpu
   delete [] input2_superStrip_layer_6;
   delete [] input2_superStrip_layer_7;
   delete [] input2_pattern_sector_id;
+  delete [] input2_pattern_pt;
 
   delete [] input2_nbHitPerPattern;
   delete [] input2_track_pt;
@@ -745,6 +757,7 @@ void PatternFinder::mergeFiles(string outputFile, string inputFile1, string inpu
   delete [] superStrip_layer_6;
   delete [] superStrip_layer_7;
   delete [] pattern_sector_id;
+  delete [] pattern_pt;
   delete [] track_pt;
   delete [] track_phi;
   delete [] track_d0;
@@ -769,7 +782,7 @@ void PatternFinder::mergeFiles(string outputFile, string inputFile1, string inpu
   delete [] hit_Y0;
   delete [] hit_Z0;
   delete [] hit_bend;
- 
+
   delete PATT1;
   delete PATT2;
   delete SEC1;
@@ -805,6 +818,7 @@ void PatternFinder::find(int start, int& stop){
   int superStrip_layer_6[MAX_NB_PATTERNS];
   int superStrip_layer_7[MAX_NB_PATTERNS];
   int superStrip_layer_8[MAX_NB_PATTERNS];
+  float pattern_pt[MAX_NB_PATTERNS];
   int pattern_sector_id[MAX_NB_PATTERNS];
 
   //Array containing the strips arrays
@@ -896,6 +910,7 @@ void PatternFinder::find(int start, int& stop){
 
   Out->Branch("eventID",             &event_id);
   Out->Branch("sectorID",            pattern_sector_id, "sectorID[nbPatterns]/I");
+  Out->Branch("patternPT",           pattern_pt, "patternPT[nbPatterns]/F");
   Out->Branch("superStrip0",         superStrip_layer_0, "superStrip0[nbPatterns]/I");
   Out->Branch("superStrip1",         superStrip_layer_1, "superStrip1[nbPatterns]/I");
   Out->Branch("superStrip2",         superStrip_layer_2, "superStrip2[nbPatterns]/I");
@@ -1187,6 +1202,9 @@ void PatternFinder::find(int start, int& stop){
 	  }
 	  //sector of the pattern
 	  pattern_sector_id[patternIndex]=sec_id;
+
+	  //Average PT of the pattern
+	  pattern_pt[patternIndex]=pl[j]->getAveragePt();
 	  	  
 	  //stubs of the patterns
 	  vector<Hit*> active_hits = pl[j]->getHits();
@@ -1309,6 +1327,7 @@ void PatternFinder::findCuda(int start, int& stop, deviceStubs* d_stubs){
   int superStrip_layer_6[MAX_NB_PATTERNS];
   int superStrip_layer_7[MAX_NB_PATTERNS];
   int superStrip_layer_8[MAX_NB_PATTERNS];
+  float pattern_pt[MAX_NB_PATTERNS];
   int pattern_sector_id[MAX_NB_PATTERNS];
   
   //Array containing the strips arrays
@@ -1399,6 +1418,7 @@ void PatternFinder::findCuda(int start, int& stop, deviceStubs* d_stubs){
 
   Out->Branch("eventID",             &event_id);
   Out->Branch("sectorID",            pattern_sector_id, "sectorID[nbPatterns]/I");
+  Out->Branch("patternPT",           pattern_pt, "patternPT[nbPatterns]/F");
   Out->Branch("superStrip0",         superStrip_layer_0, "superStrip0[nbPatterns]/I");
   Out->Branch("superStrip1",         superStrip_layer_1, "superStrip1[nbPatterns]/I");
   Out->Branch("superStrip2",         superStrip_layer_2, "superStrip2[nbPatterns]/I");

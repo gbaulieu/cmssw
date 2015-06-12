@@ -89,9 +89,9 @@ class PatternTree{
   void getActivePatternsUsingMissingHit(int max_nb_missing_hit, int active_threshold, vector<GradedPattern*>& active_patterns);
   /**
      \brief Replace all LD patterns with adapatative patterns. All FD patterns are removed.
-     \param r The number of DC bits used between FD and LD
+     \param r The number of DC bits used between FD and LD for each layer
   **/
-  void computeAdaptativePatterns(short r);
+  void computeAdaptativePatterns(vector<int> r);
   /**
      \brief Add all LD patterns coming from an other PatternTree
      \param p The PatternTree containing the patterns to add

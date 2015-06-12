@@ -8,7 +8,7 @@ short CMSPatternLayer::MOD_MASK = 0xF;
 short CMSPatternLayer::PHI_MASK = 0xF;
 short CMSPatternLayer::STRIP_MASK = 0x7F;
 short CMSPatternLayer::SEG_MASK = 0x1;
-short CMSPatternLayer::OUTER_LAYER_SEG_DIVIDE = 1;
+short CMSPatternLayer::OUTER_LAYER_SEG_DIVIDE = 2;
 short CMSPatternLayer::INNER_LAYER_SEG_DIVIDE = 2;
 
 CMSPatternLayer::CMSPatternLayer():PatternLayer(){

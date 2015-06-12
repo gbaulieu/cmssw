@@ -109,9 +109,9 @@ class SectorTree{
   int getFDPatternNumber();
   /**
      \brief Replace all LD patterns with adapatative patterns. All FD patterns are removed.
-     \param r The number of DC bits used between FD and LD
+     \param r The number of DC bits used between FD and LD for each layer ID
   **/
-  void computeAdaptativePatterns(short r);
+  void computeAdaptativePatterns(map<int, int> r);
   /**
      Link all the patterns contained in each sector to the super strips contained in the Detector object
      \param d The Detector object
@@ -142,8 +142,7 @@ class SectorTree{
 
   /**
      \brief Retrieve the superstrip size used for the patterns inside the SectorTree
-     \param layer_id The ID of the layer for which you want the superstrip size (0 for default).
-									\If the ID is not know, returns the default value.
+     \param layer_id The ID of the layer for which you want the superstrip size (0 for default).If the ID is not know, returns the default value.
      \return -1 if not specified, the superStrip size otherwise.
   **/
   int getSuperStripSize(int layer_id=0);

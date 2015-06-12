@@ -150,7 +150,7 @@ int PatternTree::getLDPatternNumber(){
     return v_patterns.size();
 }
 
-void PatternTree::computeAdaptativePatterns(short r){
+void PatternTree::computeAdaptativePatterns(vector<int> r){
   if(patterns.size()!=0){
     for(map<string, PatternTrunk*>::iterator itr = patterns.begin(); itr != patterns.end(); ++itr){
       itr->second->computeAdaptativePattern(r);
@@ -281,8 +281,9 @@ bool PatternTree::checkPattern(Pattern* lp, Pattern* hp){
     return false;
   string key = lp->getKey();
   map<string, PatternTrunk*>::iterator it = patterns.find(key);
-  if(it==patterns.end())//not found
+  if(it==patterns.end()){//not found
     return false;
+  }
   else{
     return (it->second)->checkPattern(hp);
   }

@@ -104,7 +104,7 @@ int SectorTree::getFDPatternNumber(){
   return nb;  
 }
 
-void SectorTree::computeAdaptativePatterns(short r){
+void SectorTree::computeAdaptativePatterns(map<int, int> r){
   for(unsigned int i=0;i<sector_list.size();i++){
     Sector* s=sector_list[i];
     s->computeAdaptativePatterns(r);
@@ -131,7 +131,7 @@ vector<Sector*> SectorTree::getActivePatternsPerSector(int active_threshold){
     Sector* copy = new Sector(*sector_list[i]);
     vector<GradedPattern*> active_patterns = sector_list[i]->getActivePatterns(active_threshold);
     for(unsigned int j=0;j<active_patterns.size();j++){
-      copy->getPatternTree()->addPattern(active_patterns[j], NULL);
+      copy->getPatternTree()->addPattern(active_patterns[j], NULL, active_patterns[j]->getAveragePt());
       delete active_patterns[j];
     }
     list.push_back(copy);
@@ -145,7 +145,7 @@ vector<Sector*> SectorTree::getActivePatternsPerSectorUsingMissingHit(int max_nb
     Sector* copy = new Sector(*sector_list[i]);
     vector<GradedPattern*> active_patterns = sector_list[i]->getActivePatternsUsingMissingHit(max_nb_missing_hit, active_threshold);
     for(unsigned int j=0;j<active_patterns.size();j++){
-      copy->getPatternTree()->addPattern(active_patterns[j], NULL);
+      copy->getPatternTree()->addPattern(active_patterns[j], NULL, active_patterns[j]->getAveragePt());
       delete active_patterns[j];
     }
     list.push_back(copy);

@@ -102,25 +102,25 @@ void PatternTrunk::deleteFDPatterns(){
   fullDefPatterns.clear();
 }
 
-void PatternTrunk::computeAdaptativePattern(short r){
+void PatternTrunk::computeAdaptativePattern(vector<int> r){
   int nb_layers = lowDefPattern->getNbLayers();
   for(int i=0;i<nb_layers;i++){
     
     PatternLayer* pl = lowDefPattern->getLayerStrip(i);
     int last_bits=0;
-    vector<int> bits(r,0);
+    vector<int> bits(r[i],0);
 
     for(map<string, GradedPattern*>::iterator itr = fullDefPatterns.begin(); itr != fullDefPatterns.end(); ++itr){
       PatternLayer* fd_pl = itr->second->getLayerStrip(i);
       last_bits = fd_pl->getStripCode();
       if(itr==fullDefPatterns.begin()){//first pattern, we simply copy the last bits
-	for(int j=0;j<r;j++){
-	  bits[j]=((last_bits>>(r-j-1)))&(0x1);
+	for(int j=0;j<r[i];j++){
+	  bits[j]=((last_bits>>(r[i]-j-1)))&(0x1);
 	}
       }
       else{//this is not the first pattern: if we have a different bit we set the DC value to don't care
-	for(int j=0;j<r;j++){
-	  if(bits[j]!=((last_bits>>(r-j-1))&(0x1)))
+	for(int j=0;j<r[i];j++){
+	  if(bits[j]!=((last_bits>>(r[i]-j-1))&(0x1)))
 	    bits[j]=2;
 	}
       }

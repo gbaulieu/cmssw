@@ -1,11 +1,12 @@
 #include "../interface/PatternGenerator.h"
 
 PatternGenerator::PatternGenerator(){
-  variableRes = 0;
   ptMin=2;
   ptMax=100;
   etaMin=0.0f;
   etaMax=1.0f;
+  variableRes_state_cache = false;
+  cache_is_uptodate = false;
 }
 
 void PatternGenerator::setMinPT(float minp){
@@ -46,14 +47,32 @@ void PatternGenerator::setParticuleDirName(string f){
   particuleDirName = f;
 }
 
-void PatternGenerator::setVariableResolution(int nb){
+void PatternGenerator::setVariableResolution(int nb, int l){
   if(nb<0 || nb>3)
     nb = 0;
-  variableRes = nb;
+  variableRes[l] = nb;
+  cache_is_uptodate=false;
 }
 
-int PatternGenerator::getVariableResolutionState(){
-  return variableRes;
+bool PatternGenerator::getVariableResolutionState(){
+  if(cache_is_uptodate)
+    return variableRes_state_cache;
+
+  cache_is_uptodate=true;
+  if(variableRes.size()==0){
+    variableRes_state_cache=false;
+    return variableRes_state_cache;
+  }
+
+  for(map<int, int>::iterator it = variableRes.begin(); it != variableRes.end(); it++){
+    if(it->second!=0){
+      variableRes_state_cache=true;
+      return variableRes_state_cache;
+    }
+  }
+
+  variableRes_state_cache=false;
+  return variableRes_state_cache;
 }
 
 TChain* PatternGenerator::createTChain(string directoryName, string tchainName){
@@ -129,8 +148,6 @@ int PatternGenerator::generate(TChain* TT, int* evtIndex, int evtNumber, int* nb
   int nbInLayer=0;
   int nbInSector = 0;
   int nbModuleOk = 0;
-
-  int ld_fd_factor = (int)pow(2.0,(double)variableRes);
 
   int layers[tracker_layers.size()];
   vector<int> ladder_per_layer(tracker_layers.size());
@@ -280,7 +297,7 @@ int PatternGenerator::generate(TChain* TT, int* evtIndex, int evtNumber, int* nb
     Pattern* p = new Pattern(tracker_layers.size());
     Pattern* lowDef_p=NULL;
     
-    if(variableRes){ // we use variable resolution patterns so we create 2 patterns with different resolution
+    if(getVariableResolutionState()){ // we use variable resolution patterns so we create 2 patterns with different resolution
       lowDef_p = new Pattern(tracker_layers.size());
     }
     for(unsigned int j=0;j<tracker_layers.size();j++){
@@ -314,8 +331,8 @@ int PatternGenerator::generate(TChain* TT, int* evtIndex, int evtNumber, int* nb
 	ladder=sector->getLadderCode(tracker_layers[j],CMSPatternLayer::getLadderCode(tracker_layers[j],ladder));
 	
 	strip = m_stub_strip[stub_number]/sectors->getSuperStripSize(tracker_layers[j]);
-	if(variableRes){
-	  stripLD = strip/ld_fd_factor;
+	if(getVariableResolutionState()){
+	  stripLD = strip/(int)pow(2.0,(double)variableRes[tracker_layers[j]]);
 	}
       }
       /*
@@ -332,7 +349,7 @@ int PatternGenerator::generate(TChain* TT, int* evtIndex, int evtNumber, int* nb
       pat.setValues(module, ladder, strip, seg);
       p->setLayerStrip(j, &pat);
 
-      if(variableRes){
+      if(getVariableResolutionState()){
 	lowDef_layer.setValues(module, ladder, stripLD, seg);
 	lowDef_p->setLayerStrip(j, &lowDef_layer);
       }
@@ -347,7 +364,7 @@ int PatternGenerator::generate(TChain* TT, int* evtIndex, int evtNumber, int* nb
     //cout<<*lowDef_p<<endl;
     
     if(coverageEstimation==NULL){
-      if(variableRes){
+      if(getVariableResolutionState()){
 	sector->getPatternTree()->addPattern(lowDef_p,p, last_pt);
       }
       else{
@@ -355,7 +372,7 @@ int PatternGenerator::generate(TChain* TT, int* evtIndex, int evtNumber, int* nb
       }
     }
     else{
-      if(variableRes){
+      if(getVariableResolutionState()){
 	if(sector->getPatternTree()->checkPattern(lowDef_p, p))//does the bank contains the pattern?
 	  (*coverageEstimation)++;
       }
@@ -374,7 +391,7 @@ int PatternGenerator::generate(TChain* TT, int* evtIndex, int evtNumber, int* nb
     cout<<"Nb Events with stubs on all layers : "<<nbInLayer<<endl;
     cout<<"Nb Events in sectors : "<<nbInSector<<endl;
 
-    if(variableRes)
+    if(getVariableResolutionState())
       return sectors->getFDPatternNumber();
     else
       return sectors->getLDPatternNumber();
@@ -434,7 +451,7 @@ void PatternGenerator::generate(SectorTree* sectors, int step, float threshold, 
   nbPatt->Write();
   delete nbPatt;
   
-  if(variableRes){
+  if(getVariableResolutionState()){
     cout<<"Creating variable resolution bank..."<<endl;
     sectors->computeAdaptativePatterns(variableRes);
     if(iterationNbTracks==step){

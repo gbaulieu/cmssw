@@ -1,14 +1,16 @@
 #include "../interface/Detector.h"
+#include "../interface/CMSPatternLayer.h"
 
 Detector::Detector(){
   dump=NULL;
 }
 
-void Detector::addLayer(int lNum, int nbLad, int nbMod, int segmentSize, int sstripSize){
+void Detector::addLayer(int lNum, int nbLad, int nbMod, int nbSeg, int segmentSize, int sstripSize){
   if(dump==NULL)
       dump = new SuperStrip(sstripSize);
-  Layer* l = new Layer(nbLad, nbMod, segmentSize, sstripSize);
+  Layer* l = new Layer(nbLad, nbMod, nbSeg, segmentSize, sstripSize);
   layerNumber.push_back(lNum);
+  superStripSizes.push_back(sstripSize);
   layers.push_back(l);
 }
 
@@ -50,16 +52,24 @@ void Detector::clear(){
 }
 
 void Detector::receiveHit(const Hit& h){
-  //  cout<<h<<endl;
+  cout<<h<<endl;
   int l = getLayerPosition(h.getLayer());
   if(l!=-1){
     Layer* la = getLayerFromAbsolutePosition(l);
     if(la!=NULL){
-      SuperStrip* s = la->getLadder(h.getLadder())->getModule(h.getModule())->getSegment(h.getSegment())->getSuperStrip(h.getStripNumber());
-      if(s==NULL)
-	cout<<"ERROR : Cannot find superStrip corresponding to the following hit : "<<h<<endl;
-      else
-	s->touch(&h);
+      try{
+	CMSPatternLayer pat;
+	pat.computeSuperstrip(h.getLayer(), h.getModule(), h.getLadder(), h.getStripNumber(), h.getSegment(), superStripSizes[l]);
+	SuperStrip* s = la->getLadder(pat.getPhi())->getModule(pat.getSegment())->getSegment(pat.getModule())->getSuperStripFromIndex(pat.getStrip());
+	if(s==NULL)
+	  cout<<"ERROR : Cannot find superStrip corresponding to the following hit : "<<h<<endl;
+	else
+	  s->touch(&h);
+      }
+      catch (const std::out_of_range& oor) {
+	std::cerr << "The following point cannot be mapped to a superstrip : "<<endl;
+	std::cerr << h << endl;
+      }
     }
   }
   else{

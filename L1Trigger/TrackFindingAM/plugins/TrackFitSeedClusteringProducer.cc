@@ -1,7 +1,7 @@
-/*! \class   TrackFitHoughProducer
+/*! \class   TrackFitSeedClusteringProducer
  *
- *  \author S Viret / G Baulieu
- *  \date   2014, Jan 17
+ *  \author S Viret / G Baulieu / G Galbit
+ *  \date   2015, Mar 10
  *
  */
 
@@ -51,14 +51,14 @@
 //BOOST_CLASS_EXPORT_IMPLEMENT(CMSPatternLayer)
 //#endif
 
-class TrackFitHoughProducer : public edm::EDProducer
+class TrackFitSeedClusteringProducer : public edm::EDProducer
 {
   public:
     /// Constructor
-    explicit TrackFitHoughProducer( const edm::ParameterSet& iConfig );
+    explicit TrackFitSeedClusteringProducer( const edm::ParameterSet& iConfig );
 
     /// Destructor;
-    ~TrackFitHoughProducer();
+    ~TrackFitSeedClusteringProducer();
 
   private:
   
@@ -72,6 +72,7 @@ class TrackFitHoughProducer : public edm::EDProducer
   edm::InputTag                TTStubsInputTag;
   edm::InputTag                TTPatternsInputTag;
   std::string                  TTTrackOutputTag;
+  std::vector<float>	       nPhiValues;
 
   /// Mandatory methods
   virtual void beginRun( const edm::Run& run, const edm::EventSetup& iSetup );
@@ -84,20 +85,29 @@ class TrackFitHoughProducer : public edm::EDProducer
  */
 
 /// Constructors
-TrackFitHoughProducer::TrackFitHoughProducer( const edm::ParameterSet& iConfig )
+TrackFitSeedClusteringProducer::TrackFitSeedClusteringProducer( const edm::ParameterSet& iConfig )
 {
   TTStubsInputTag    = iConfig.getParameter< edm::InputTag >( "TTInputStubs" );
   TTPatternsInputTag = iConfig.getParameter< edm::InputTag >( "TTInputPatterns" );
   TTTrackOutputTag   = iConfig.getParameter< std::string >( "TTTrackName" );
 
   produces< std::vector< TTTrack< Ref_PixelDigi_ > > >( TTTrackOutputTag );
+
+  nPhiValues.push_back(0);
+  nPhiValues.push_back(0.789);
+  nPhiValues.push_back(1.57);
+  nPhiValues.push_back(2.36);
+  nPhiValues.push_back(3.14);
+  nPhiValues.push_back(3.93);
+  nPhiValues.push_back(4.71);
+  nPhiValues.push_back(5.5);
 }
 
 /// Destructor
-TrackFitHoughProducer::~TrackFitHoughProducer() {}
+TrackFitSeedClusteringProducer::~TrackFitSeedClusteringProducer() {}
 
 /// Begin run
-void TrackFitHoughProducer::beginRun( const edm::Run& run, const edm::EventSetup& iSetup )
+void TrackFitSeedClusteringProducer::beginRun( const edm::Run& run, const edm::EventSetup& iSetup )
 {
   /// Get the geometry references
   edm::ESHandle< StackedTrackerGeometry > StackedTrackerGeomHandle;
@@ -113,10 +123,10 @@ void TrackFitHoughProducer::beginRun( const edm::Run& run, const edm::EventSetup
 }
 
 /// End run
-void TrackFitHoughProducer::endRun( const edm::Run& run, const edm::EventSetup& iSetup ) {}
+void TrackFitSeedClusteringProducer::endRun( const edm::Run& run, const edm::EventSetup& iSetup ) {}
 
 /// Implement the producer
-void TrackFitHoughProducer::produce( edm::Event& iEvent, const edm::EventSetup& iSetup )
+void TrackFitSeedClusteringProducer::produce( edm::Event& iEvent, const edm::EventSetup& iSetup )
 {
   /// Prepare output
   /// The temporary collection is used to store tracks
@@ -137,6 +147,8 @@ void TrackFitHoughProducer::produce( edm::Event& iEvent, const edm::EventSetup& 
   int layer  = 0;
   int ladder = 0;
   int module = 0;
+
+  int nbLayers = 0;
 
   /// STEP 1
   /// Loop over patterns
@@ -170,6 +182,7 @@ void TrackFitHoughProducer::produce( edm::Event& iEvent, const edm::EventSetup& 
 
       /// Get everything relevant
       unsigned int seedSector = tempTrackPtr->getSector();
+      nbLayers = tempTrackPtr->getWedge();
 
       //      std::cout << "Pattern in sector " << seedSector << " with " 
       //      		<< seedWedge << " active layers contains " 
@@ -302,8 +315,7 @@ void TrackFitHoughProducer::produce( edm::Event& iEvent, const edm::EventSetup& 
     
     /// STEP 2
     /// PAssing the hits in the trackfit
-    
-    TrackFitter* fitter = new HoughFitter();
+    TrackFitter* fitter = new SeedClusteringFitter(nbLayers);
     vector<Track*> tracks; 
     std::vector< edm::Ref< edmNew::DetSetVector< TTStub< Ref_PixelDigi_ > >, TTStub< Ref_PixelDigi_ > > > tempVec;
 
@@ -311,8 +323,8 @@ void TrackFitHoughProducer::produce( edm::Event& iEvent, const edm::EventSetup& 
 
     for(map<int,vector<Hit*>*>::iterator sec_it=m_hitsPerSector.begin();sec_it!=m_hitsPerSector.end();sec_it++)
     {
-      //      cout<<"Sector "<<sec_it->first<<endl;
       fitter->setSectorID(sec_it->first);
+      fitter->setPhiRotation(nPhiValues[sec_it->first%8]);
 
       // Do the fit
       fitter->fit(*(sec_it->second));
@@ -322,6 +334,7 @@ void TrackFitHoughProducer::produce( edm::Event& iEvent, const edm::EventSetup& 
       fitter->clean();
 
       // Store the tracks (no duplicate cleaning yet)
+      cout<<"Found "<<tracks.size()<<" track"<<endl;
  
       for(unsigned int tt=0;tt<tracks.size();tt++)
       {	
@@ -331,7 +344,7 @@ void TrackFitHoughProducer::produce( edm::Event& iEvent, const edm::EventSetup& 
 	vector<int> stubs = tracks[tt]->getStubs();
 	for(unsigned int sti=0;sti<stubs.size();sti++)
 	{
-	  //cout<<stubs[sti]<<endl;
+	  cout<<stubs[sti]<<endl;
 	  tempVec.push_back( stubMapUsed[ stubs[sti] ] );
 	}
 	/////////////////////////////////////////
@@ -345,7 +358,7 @@ void TrackFitHoughProducer::produce( edm::Event& iEvent, const edm::EventSetup& 
 			 tracks[tt]->getCurve()*sin(tracks[tt]->getPhi0()),
 			 pz);
 
-	//	std::cout << tracks[tt]->getZ0() << " / " << POCA.z() << std::endl;
+	std::cout << tracks[tt]->getCurve()<<" / "<<tracks[tt]->getZ0() << " / " <<tracks[tt]->getEta0()<<" / "<<tracks[tt]->getPhi0()<< std::endl;
 
 	tempTrack.setSector( sec_it->first );
 	tempTrack.setWedge( -1 );
@@ -376,7 +389,7 @@ void TrackFitHoughProducer::produce( edm::Event& iEvent, const edm::EventSetup& 
 }
 
 // DEFINE THIS AS A PLUG-IN
-DEFINE_FWK_MODULE(TrackFitHoughProducer);
+DEFINE_FWK_MODULE(TrackFitSeedClusteringProducer);
 
 #endif
 

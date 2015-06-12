@@ -3,8 +3,12 @@
 
 #include <iostream>
 #include <sstream>
+#include <fstream>
+#include <algorithm>
+#include <iomanip>
 #include <bitset>
 #include "PatternLayer.h"
+#include <stdexcept>
 
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/export.hpp>
@@ -32,22 +36,13 @@ using namespace std;
 
 class CMSPatternLayer : public PatternLayer{
  private:
-  static const short MOD_START_BIT = 11;
-  static const short PHI_START_BIT = 7;
-  static const short STRIP_START_BIT = 1;
-  static const short SEG_START_BIT = 0;
-
-  static const short MOD_MASK = 0x1F;
-  static const short PHI_MASK = 0xF;
-  static const short STRIP_MASK = 0x3F;
-  static const short SEG_MASK = 0x1;
 
   short binaryToGray(short num);
   short grayToBinary(short gray);
 
   friend class boost::serialization::access;
   
-  template<class Archive> void save(Archive & ar, const unsigned int version) const//const boost::serialization::version_type& version) const 
+  template<class Archive> void save(Archive & ar, const unsigned int version) const
     {
       ar << boost::serialization::base_object<PatternLayer>(*this);
     }
@@ -72,6 +67,20 @@ class CMSPatternLayer : public PatternLayer{
   BOOST_SERIALIZATION_SPLIT_MEMBER()
 
  public:
+
+  static short MOD_START_BIT;
+  static short PHI_START_BIT;
+  static short STRIP_START_BIT;
+  static short SEG_START_BIT;
+
+  static short MOD_MASK;
+  static short PHI_MASK;
+  static short STRIP_MASK;
+  static short SEG_MASK;
+
+  static short OUTER_LAYER_SEG_DIVIDE;//Simplification factor on outer barrel layers segments (1:we use segment, 2:all values to 0)
+  static short INNER_LAYER_SEG_DIVIDE;//Simplification factor on inner barrel layers segments (1:we use segment, 2:all values to 0)
+
   CMSPatternLayer();
   CMSPatternLayer* clone();
   vector<SuperStrip*> getSuperStrip(int l, const vector<int>& ladd, const map<int, vector<int> >& modules, Detector& d);
@@ -85,6 +94,9 @@ class CMSPatternLayer : public PatternLayer{
      \param seg The segment in the module (0 or 1)
   **/
   void setValues(short m, short phi, short strip, short seg);
+
+  void computeSuperstrip(short layerID, short module, short phi, short strip, short seg, int sstripSize, bool fake=0);
+
   /**
      \brief Returns a string representation of the PatternLayer
      \return A string describing the PatternLayer
@@ -199,6 +211,12 @@ class CMSPatternLayer : public PatternLayer{
      \return For each layerID, gives the minimum and maximum ETA values
   **/
   static map<int, pair<float,float> > getLayerDefInEta();
+
+  static map< string, int > loadPhiLUT(string name);
+  static map< string, int > loadZLUT(string name);
+
+  static map<string, int> phi_lut;
+  static map<string, int> z_lut;
 
 };
 BOOST_CLASS_VERSION(CMSPatternLayer, 1)

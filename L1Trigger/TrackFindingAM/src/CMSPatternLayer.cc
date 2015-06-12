@@ -1,5 +1,19 @@
 #include "../interface/CMSPatternLayer.h"
 
+short CMSPatternLayer::MOD_START_BIT = 10;
+short CMSPatternLayer::PHI_START_BIT = 15;
+short CMSPatternLayer::STRIP_START_BIT = 0;
+short CMSPatternLayer::SEG_START_BIT = 0;
+short CMSPatternLayer::MOD_MASK = 0x1F;
+short CMSPatternLayer::PHI_MASK = 0x1;
+short CMSPatternLayer::STRIP_MASK = 0x3FF;
+short CMSPatternLayer::SEG_MASK = 0x0;
+short CMSPatternLayer::OUTER_LAYER_SEG_DIVIDE = 1;
+short CMSPatternLayer::INNER_LAYER_SEG_DIVIDE = 2;
+
+map<string, int> CMSPatternLayer::phi_lut = loadPhiLUT("/scratch/lut.txt");
+map<string, int> CMSPatternLayer::z_lut = loadZLUT("/scratch/lut.txt");
+
 CMSPatternLayer::CMSPatternLayer():PatternLayer(){
 
 }
@@ -13,7 +27,7 @@ CMSPatternLayer* CMSPatternLayer::clone(){
 
 
 bool CMSPatternLayer::isFake(){
-  return (getPhi()==15);
+  return (getPhi()==1);
 }
 
 vector<SuperStrip*> CMSPatternLayer::getSuperStrip(int l, const vector<int>& ladd, const map<int, vector<int> >& modules, Detector& d){
@@ -37,14 +51,14 @@ vector<SuperStrip*> CMSPatternLayer::getSuperStrip(int l, const vector<int>& lad
   else{
     Layer* la = d.getLayerFromAbsolutePosition(l);
     if(la!=NULL){
-      int ladderID = ladd[getPhi()];//getPhi() is the position in the sector;ladd[getPhi()] gives the ID of the ladder
-      Ladder* patternLadder = la->getLadder(ladderID);
+      //int ladderID = ladd[getPhi()];//getPhi() is the position in the sector;ladd[getPhi()] gives the ID of the ladder
+      Ladder* patternLadder = la->getLadder(0);
       if(patternLadder!=NULL){
-	map<int, vector<int> >::const_iterator iterator = modules.find(ladderID); // get the vector of module IDs for this ladder
-	int moduleID = iterator->second[getModule()];// getthe module ID from its position
-	Module* patternModule = patternLadder->getModule(moduleID);
+	//map<int, vector<int> >::const_iterator iterator = modules.find(ladderID); // get the vector of module IDs for this ladder
+	//int moduleID = iterator->second[getModule()];// get the module ID from its position
+	Module* patternModule = patternLadder->getModule(0);
 	if(patternModule!=NULL){
-	  Segment* patternSegment = patternModule->getSegment(getSegment());
+	  Segment* patternSegment = patternModule->getSegment(getModule());
 	  if(patternSegment!=NULL){
 	    int base_index = getStripCode()<<nb_dc;
 	    if(nb_dc>0){
@@ -61,10 +75,19 @@ vector<SuperStrip*> CMSPatternLayer::getSuperStrip(int l, const vector<int>& lad
 	    }
 	    return v;
 	  }
+	  else{
+	    cout<<"cannot find segment "<<getModule()<<endl;
+	  }
+	}
+	else{
+	  cout<<"cannot find module 0"<<endl;
 	}
       }
+      else{
+	cout<<"cannot find ladder 0"<<endl;
+      }
     }
-    cout<<"Error : can not link layer "<<l<<" ladder "<<ladd[getPhi()]<<" module "<<getModule()<<" segment "<<getSegment()<<" strip "<<getStrip()<<endl;
+    cout<<"Error : can not link layer "<<l<<" ladder "<<ladd[0]<<" module "<<getModule()<<" segment "<<getSegment()<<" strip "<<getStrip()<<endl;
   }
   return v;
 }
@@ -117,6 +140,90 @@ void CMSPatternLayer::setValues(short m, short phi, short strip, short seg){
     (phi&PHI_MASK)<<PHI_START_BIT |
     (strip&STRIP_MASK)<<STRIP_START_BIT |
     (seg&SEG_MASK)<<SEG_START_BIT;
+}
+
+void CMSPatternLayer::computeSuperstrip(short layerID, short module, short phi, short strip, short seg, int sstripSize, bool fake){
+    if(fake){
+      setValues(0, 1, 0, 0);
+      return;
+    }
+
+    ostringstream oss;
+    oss<<std::setfill('0');    
+    oss<<layerID<<setw(2)<<phi<<module;
+    int delta_z = z_lut.at(oss.str());
+    //cout<<"z_lut["<<oss.str()<<") = "<<delta_z<<endl;
+    //if(module%2!=0)
+    //  delta_z++;
+    
+    int z = delta_z-seg;
+ 
+    //if(layerID>7 && layerID<11) 
+    //  z = z-seg;
+    
+    //cout<<"-> module = "<<z<<endl;
+    
+    if(layerID>=5 && layerID<=7)
+      z = z/(32*INNER_LAYER_SEG_DIVIDE);
+    else if (layerID>10 && phi<=8)
+      z = z/(32*INNER_LAYER_SEG_DIVIDE);
+    else
+      z = z/OUTER_LAYER_SEG_DIVIDE;
+
+    /****************/
+    if(module%2!=0){
+      module--;
+    
+      switch(layerID){
+      case 5:{
+	strip = (1.026*strip)-13;
+      }break;
+      case 6:{
+	strip = (1.017*strip)-8;
+      }break;
+      case 7:{
+	strip = (0.988*strip)+7;
+      }break;
+      case 8:{
+	strip = (1.009*strip)-5;
+      }break;
+      case 9:{
+	strip = (1.006*strip)-4;
+      }break;
+      case 10:{
+	strip = (1.006*strip)-3;
+      }break;
+      }
+      oss.clear();
+      oss.str("");
+      oss<<layerID<<setw(2)<<phi<<module;
+      
+      try{
+	phi_lut.at(oss.str());
+      }
+      catch (const std::out_of_range& oor) {
+	module+=2;
+	oss.clear();
+	oss.str("");
+	oss<<layerID<<setw(2)<<phi<<module;
+      }
+    }
+    /***************/
+
+    int delta_phi = phi_lut.at(oss.str());
+    //cout<<"phi_lut["<<oss.str()<<") = "<<delta_phi<<endl;
+
+    int superStrip = delta_phi-strip;
+    //cout<<"-> Superstrip = "<<superStrip<<endl;
+    //cout<<"utilisation de "<<sstripSize<<" strips par superstrip"<<endl;
+    superStrip = superStrip/sstripSize;
+    //cout<<"  -> superstrip apres resolution = "<<superStrip<<endl;
+    
+    //z=0;
+    //  if(layerID>7 && layerID<=10)
+    //cout<<"  -> module apres resolution = "<<z<<endl;
+    
+    setValues(z, 0, superStrip, 0);
 }
 
 short CMSPatternLayer::getModule(){
@@ -466,6 +573,8 @@ int CMSPatternLayer::getNbStripsInSegment(){
 }
 
 int CMSPatternLayer::getSegmentCode(int layerID, int ladderID, int segmentID){
+  return segmentID;
+  /*
   if(layerID>7 && layerID<11)
     return segmentID;
   if(layerID>=5 && layerID<=7)
@@ -473,14 +582,15 @@ int CMSPatternLayer::getSegmentCode(int layerID, int ladderID, int segmentID){
   if(ladderID<=8)
     return segmentID/16;
   return segmentID;
+  */
 }
 
 
 int CMSPatternLayer::getModuleCode(int layerID, int moduleID){
   switch(layerID){
-  case 5 : return (moduleID/2);
-  case 6 : return (moduleID/2);
-  case 7 : return (moduleID/2);
+  case 5 : return (moduleID);
+  case 6 : return (moduleID);
+  case 7 : return (moduleID);
   case 8 : return moduleID;
   case 9 : return moduleID;
   case 10 : return moduleID;
@@ -557,4 +667,78 @@ map<int, pair<float,float> > CMSPatternLayer::getLayerDefInEta(){
   eta[21]=pair<float,float>(-2.5,-1.49);
   eta[22]=pair<float,float>(-2.5,-1.65);
   return eta;
+}
+
+map< string, int > CMSPatternLayer::loadPhiLUT(string name){
+  string line;
+  ifstream myfile (name.c_str());
+  map< string, int > phi_lut;
+  if (myfile.is_open()){
+    while ( myfile.good() ){
+      getline (myfile,line);
+      if(line.length()>0 && line.find("#")!=0){
+	
+	stringstream ss(line);
+	std::string item;
+	vector<string> items;
+	while (getline(ss, item, '/')) {
+	  std::string::iterator end_pos = std::remove(item.begin(), item.end(), ' ');
+	  item.erase(end_pos, item.end());
+	  items.push_back(item);
+	}
+	if(items.size()==6){
+	  istringstream buffer(items[2]);
+	  istringstream buffer2(items[3]);
+	  int startStrip;
+	  int superStripIndex;
+	  buffer >> startStrip;
+	  buffer2 >> superStripIndex;
+	  phi_lut[items[1]]=startStrip+superStripIndex;
+	}
+      }
+    }
+    myfile.close();
+  }
+  else{
+    cout << "Can not find file "<<name<<" to load the lookup table!"<<endl;
+    exit(-1);
+  }
+  return phi_lut;
+}
+
+map< string, int > CMSPatternLayer::loadZLUT(string name){
+  string line;
+  ifstream myfile (name.c_str());
+  map< string, int > phi_lut;
+  if (myfile.is_open()){
+    while ( myfile.good() ){
+      getline (myfile,line);
+      if(line.length()>0 && line.find("#")!=0){
+	
+	stringstream ss(line);
+	std::string item;
+	vector<string> items;
+	while (getline(ss, item, '/')) {
+	  std::string::iterator end_pos = std::remove(item.begin(), item.end(), ' ');
+	  item.erase(end_pos, item.end());
+	  items.push_back(item);
+	}
+	if(items.size()==6){
+	  istringstream buffer(items[4]);
+	  istringstream buffer2(items[5]);
+	  int startStrip;
+	  int superStripIndex;
+	  buffer >> startStrip;
+	  buffer2 >> superStripIndex;
+	  phi_lut[items[1]]=startStrip+superStripIndex;
+	}
+      }
+    }
+    myfile.close();
+  }
+  else{
+    cout << "Can not find file "<<name<<" to load the lookup table!"<<endl;
+    exit(-1);
+  }
+  return phi_lut;
 }

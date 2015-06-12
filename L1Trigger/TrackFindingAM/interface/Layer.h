@@ -17,10 +17,11 @@ class Layer{
      \brief Constructor
      \param nbLad Number of ladders on this layer
      \param nbMod Number of modules on each ladder
+     \param nbSeg Number of segments on each module
      \param segmentSize Number of strips in a segment
      \param sstripSize Number of strips in a super strip
   **/
-  Layer(int nbLad, int nbMod, int segmentSize, int sstripSize);
+  Layer(int nbLad, int nbMod, int nbSeg, int segmentSize, int sstripSize);
   /**
      \brief Destructor
   **/

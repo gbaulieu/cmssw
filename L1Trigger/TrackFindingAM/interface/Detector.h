@@ -18,6 +18,7 @@ class Detector{
  private:
   vector<Layer*> layers;
   vector<int> layerNumber;
+  vector<int> superStripSizes;
   SuperStrip* dump;//used for fake superstrips in the patterns
 
   int getLayerPosition(int pos);
@@ -33,10 +34,11 @@ class Detector{
      \param lNum The id of the layer (ie 10 for the outermost layer)
      \param nbLad Number of ladders in the layer
      \param nbMod Number of modules for each ladder
+     \param nbSeg Number of segments for each module
      \param segmentSize Number of strips in each segment
      \param sstripSize Size of a superStrip (number of strips)
   **/
-  void addLayer(int lNum, int nbLad, int nbMod, int segmentSize, int sstripSize);
+  void addLayer(int lNum, int nbLad, int nbMod, int nbSeg, int segmentSize, int sstripSize);
   /**
      \brief Destructor
      Delete all layers.

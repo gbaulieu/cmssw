@@ -152,6 +152,13 @@ class Sector{
   int getNbLayers();
 
   /**
+     \brief Get the number of ladders in the layer
+     \param layerID The layer ID
+     \return The number of ladder
+  **/
+  int getNbLadders(int layerID);
+
+  /**
      \brief Get all the possible paths in this sector (1 ladder per layer)
      \return A list of strings. Each string uses 2 digits per ladder (01 02 03 ...). The format is 020406 for ladders 2,4 and 6 respectively on layers 0,1 and 2
   **/

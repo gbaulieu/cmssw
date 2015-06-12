@@ -104,7 +104,6 @@ vector<int> PatternTree::getPTHisto(){
   for(int i=0;i<150;i++){
     h.push_back(0);
   }
-
   if(patterns.size()!=0){
     for(map<string, PatternTrunk*>::iterator itr = patterns.begin(); itr != patterns.end(); ++itr){
       float pt = itr->second->getLDPatternPT();
@@ -202,11 +201,10 @@ void PatternTree::linkCuda(patternBank* p, deviceDetector* d, const vector< vect
 	cout.flush();
       }
     }
-   }
+  }
   delete[] cache;
 }
 #endif
- 
 
 void PatternTree::getActivePatterns(int active_threshold, vector<GradedPattern*>& active_patterns){
   if(patterns.size()!=0){
@@ -248,9 +246,9 @@ void PatternTree::addPatternsFromTree(PatternTree* p){
   vector<GradedPattern*> ld = p->getLDPatterns();
   for(unsigned int i=0;i<ld.size();i++){
     GradedPattern* patt = ld[i];
-
+    
     addPatternForMerging(patt);
-
+    
     delete patt;
   }
 }
@@ -288,4 +286,23 @@ bool PatternTree::checkPattern(Pattern* lp, Pattern* hp){
   else{
     return (it->second)->checkPattern(hp);
   }
+}
+
+bool comparePatterns(PatternTrunk* p1, PatternTrunk* p2){
+  if(p1->getLDPatternGrade()==p2->getLDPatternGrade())
+    return p1->getLDPatternPT()>p2->getLDPatternPT();
+  else
+    return p1->getLDPatternGrade()>p2->getLDPatternGrade();
+}
+
+void PatternTree::truncate(int nbPatterns){
+  switchToVector();
+  sort(v_patterns.begin(),v_patterns.end(), comparePatterns);
+  cout<<"Scores ranging from  : "<<v_patterns[0]->getLDPatternGrade()<<" to "<<v_patterns[v_patterns.size()-1]->getLDPatternGrade()<<endl;
+  int nbToDelete = v_patterns.size()-nbPatterns;
+  for(int i=0;i<nbToDelete;i++){
+    v_patterns.pop_back();
+  }
+  cout<<"Keep "<<v_patterns.size()<<" patterns with scores ranging from  : "<<v_patterns[0]->getLDPatternGrade()<<" to "<<v_patterns[v_patterns.size()-1]->getLDPatternGrade()<<endl;
+  switchToMap();
 }

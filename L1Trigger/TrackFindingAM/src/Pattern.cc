@@ -152,7 +152,7 @@ void Pattern::link(Detector& d, const vector< vector<int> >& sec, const vector<m
   if(strips!=NULL){// already linked
     unlink();
   }
-
+  
   nb_strips=new char[nb_layer];
   strips = new SuperStrip**[nb_layer];
   for(int i=0;i<nb_layer;i++){

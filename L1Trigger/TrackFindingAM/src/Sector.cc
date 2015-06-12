@@ -194,6 +194,15 @@ int Sector::getNbLayers(){
   return m_modules.size();
 }
 
+int Sector::getNbLadders(int layerID){
+  map<int, vector<int> >::const_iterator it = m_ladders.find(layerID);
+
+  if(it==m_ladders.end())
+    return -1;//the layer does not exist
+
+  return it->second.size();
+}
+
 bool Sector::contains(const Hit& h){
   map<int, map<int, vector<int> > >::iterator it = m_modules.find(h.getLayer());
   if(it==m_modules.end())

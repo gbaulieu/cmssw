@@ -6,28 +6,40 @@ TTPatternsFromStub = cms.EDProducer("TrackFindingAMProducer",
    TTPatternName      = cms.string("AML1Patterns"),
    inputBankFile      = cms.string('/afs/cern.ch/work/s/sviret/testarea/PatternBanks/BE_5D/Eta7_Phi8/ss32_cov40/612_SLHC6_MUBANK_lowmidhig_sec37_ss32_cov40.pbk'),
    threshold          = cms.int32(5),
-   nbMissingHits      = cms.int32(-1)
+   nbMissingHits      = cms.int32(-1),
+   debugMode          = cms.int32(0)
 )
 
 ## Trackfit default sequence
 
-doRetinaFit = False
+#0:Hough
+#1:Retina
+#2:SeedClustering
+fitAlgorithm = 0;
 
-TTTracksFromPattern = ( cms.EDProducer("TrackFitRetinaProducer",
-                                       TTInputStubs       = cms.InputTag("TTStubsFromPixelDigis", "StubAccepted"),
-                                       TTInputPatterns    = cms.InputTag("MergePROutput", "AML1Patterns"),
-                                       TTTrackName        = cms.string("AML1Tracks"),
-                                       verboseLevel       = cms.untracked.int32(1),
-                                       fitPerTriggerTower = cms.untracked.bool(False),
-                                       removeDuplicates   = cms.untracked.int32(1)
-                                       )
-                        if doRetinaFit else
-                        cms.EDProducer("TrackFitHoughProducer",
-                                       TTInputStubs       = cms.InputTag("TTStubsFromPixelDigis", "StubAccepted"),
-                                       TTInputPatterns    = cms.InputTag("MergePROutput", "AML1Patterns"),
-                                       TTTrackName        = cms.string("AML1Tracks"),
-                                       )
-                        )
+if fitAlgorithm==0 :
+	TTTracksFromPattern = ( cms.EDProducer("TrackFitHoughProducer",
+                                TTInputStubs       = cms.InputTag("TTStubsFromPixelDigis", "StubAccepted"),
+                                TTInputPatterns    = cms.InputTag("MergePROutput", "AML1Patterns"),
+                                TTTrackName        = cms.string("AML1Tracks"))
+				)
+
+elif fitAlgorithm==1 :
+	TTTracksFromPattern = ( cms.EDProducer("TrackFitRetinaProducer",
+                                TTInputStubs       = cms.InputTag("TTStubsFromPixelDigis", "StubAccepted"),
+                                TTInputPatterns    = cms.InputTag("MergePROutput", "AML1Patterns"),
+                                TTTrackName        = cms.string("AML1Tracks"),
+                               	verboseLevel       = cms.untracked.int32(1),
+                                fitPerTriggerTower = cms.untracked.bool(False),
+                                removeDuplicates   = cms.untracked.int32(1))
+				)
+
+elif fitAlgorithm==2 :
+	TTTracksFromPattern = (	cms.EDProducer("TrackFitSeedClusteringProducer",
+                                TTInputStubs       = cms.InputTag("TTStubsFromPixelDigis", "StubAccepted"),
+                                TTInputPatterns    = cms.InputTag("MergePROutput", "AML1Patterns"),
+                                TTTrackName        = cms.string("AML1Tracks"))
+                        	)
 
 
 # AM output merging sequence

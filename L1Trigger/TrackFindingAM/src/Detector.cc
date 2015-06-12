@@ -52,7 +52,7 @@ void Detector::clear(){
 }
 
 void Detector::receiveHit(const Hit& h){
-  cout<<h<<endl;
+  //cout<<h<<endl;
   int l = getLayerPosition(h.getLayer());
   if(l!=-1){
     Layer* la = getLayerFromAbsolutePosition(l);

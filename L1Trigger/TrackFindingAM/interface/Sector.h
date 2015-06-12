@@ -254,9 +254,9 @@ class Sector{
   int getFDPatternNumber();
   /**
      \brief Replace all LD patterns with adapatative patterns. All FD patterns are removed.
-     \param r The number of DC bits used between FD and LD
+     \param r The number of DC bits used between FD and LD for each layer ID
   **/
-  void computeAdaptativePatterns(short r);
+  void computeAdaptativePatterns(map<int, int> r);
   /**
      Link all the patterns contained in the sector to the super strips contained in the Detector object
      \param d The Detector object

@@ -410,8 +410,12 @@ int Sector::getFDPatternNumber(){
   return patterns->getFDPatternNumber();
 }
 
-void Sector::computeAdaptativePatterns(short r){
-    patterns->computeAdaptativePatterns(r);
+void Sector::computeAdaptativePatterns(map<int, int> r){
+  vector<int> res;
+  for(int i=0;i<getNbLayers();i++){
+    res.push_back(r[getLayerID(i)]);
+  }
+  patterns->computeAdaptativePatterns(res);
 }
 
 void Sector::link(Detector& d){

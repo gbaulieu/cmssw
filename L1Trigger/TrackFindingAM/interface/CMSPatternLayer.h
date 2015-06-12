@@ -206,7 +206,9 @@ class CMSPatternLayer : public PatternLayer{
   **/  
   bool isFake();
 
-  /**
+  vector<int> getHDSuperstrips();  
+
+/**
      \brief Returns a map containing the valid ETA range for each layer
      \return For each layerID, gives the minimum and maximum ETA values
   **/

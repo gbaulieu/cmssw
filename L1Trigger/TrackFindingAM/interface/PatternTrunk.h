@@ -76,9 +76,9 @@ class PatternTrunk{
 
   /**
      \brief Set the DC bits of the LD patterns. All FD patterns are removed.
-     \param r The number of DC bits used between FD and LD
+     \param r The number of DC bits used between FD and LD for each layer
   **/
-  void computeAdaptativePattern(short r);
+  void computeAdaptativePattern(vector<int> r);
 
   /**
      \brief Link the low definition patterns to the detector structure

@@ -104,7 +104,7 @@ int SectorTree::getFDPatternNumber(){
   return nb;  
 }
 
-void SectorTree::computeAdaptativePatterns(short r){
+void SectorTree::computeAdaptativePatterns(map<int, int> r){
   for(unsigned int i=0;i<sector_list.size();i++){
     Sector* s=sector_list[i];
     s->computeAdaptativePatterns(r);

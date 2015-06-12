@@ -1178,7 +1178,7 @@ void PatternFinder::find(int start, int& stop){
       for(unsigned int j=0;j<pl.size();j++){
 	if(j<max_patterns){
 	  //loop on layers
-	  cout<<*pl[j]<<endl;
+	  //cout<<*pl[j]<<endl;
 	  for(int k=0;k<nb_layers;k++){
 	    int sstripValue = pl[j]->getLayerStrip(k)->getIntValue();
 	    superStrips[k][patternIndex]=sstripValue;

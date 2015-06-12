@@ -205,18 +205,22 @@ bool Pattern::contains(Pattern* hdp){
     return false;
   
   for(int i=0;i<nb_layer;i++){
-    //cout<<"index gray : "<<layer_strips[i]->getStripCode()<<endl;
     int base_index = layer_strips[i]->getStripCode()<<layer_strips[i]->getDCBitsNumber();
-    //cout<<"index gray decale: "<<base_index<<endl;
     vector<short> positions=layer_strips[i]->getPositionsFromDC();
     bool found = false;
     short reference = hdp->getLayerStrip(i)->getStripCode();
-    for(unsigned int j=0;j<positions.size();j++){
-      int index = base_index | positions[j];
-      //      cout<<"index gray avec DC "<<positions[j]<<" : "<<index<<endl;
-      if(reference==index){
+    if(positions.size()==0){//no DC bits used
+      if(reference==base_index){
 	found=true;
-	break;
+      }
+    }
+    else{
+      for(unsigned int j=0;j<positions.size();j++){
+	int index = base_index | positions[j];
+	if(reference==index){
+	  found=true;
+	  break;
+	}
       }
     }
     if(!found){

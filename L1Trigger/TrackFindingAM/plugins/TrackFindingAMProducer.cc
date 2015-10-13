@@ -238,7 +238,7 @@ void TrackFindingAMProducer::produce( edm::Event& iEvent, const edm::EventSetup&
       float y    = posStub.y();
       float z    = posStub.z();
 
-      Hit* h = new Hit(layer,ladder, module, segment, mp0.x(), j, -1, 0, 0, 0, 0, x, y, z, 0, 0, 0);
+      Hit* h = new Hit(layer,ladder, module, segment, mp0.x(), j, -1, 0, 0, 0, 0, x, y, z, 0, 0, 0, tempStubRef->getTriggerDisplacement()-tempStubRef->getTriggerOffset());
       if(m_st.getSector(*h)!=NULL)
         m_hits.push_back(h);
       else

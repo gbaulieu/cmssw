@@ -69,6 +69,11 @@ void Detector::receiveHit(const Hit& h){
     if(la!=NULL){
       try{
 	CMSPatternLayer pat;
+
+	bool isPSModule = false;
+	if((h.getLayer()>=5 && h.getLayer()<=7) || (h.getLayer()>10 && h.getLadder()<=8)){
+	  isPSModule=true;
+	}
 	
 	ostringstream oss;
 	oss<<std::setfill('0');
@@ -77,7 +82,7 @@ void Detector::receiveHit(const Hit& h){
 	string lad = oss.str();
 	oss<<setw(2)<<(int)h.getModule();
 
-	pat.computeSuperstrip(h.getLayer(), moduleMap[oss.str()], ladderMap[lad], h.getStripNumber(), h.getSegment(), SectorTree::getSuperstripSize(h.getLayer(),h.getLadder()));
+	pat.computeSuperstrip(h.getLayer(), moduleMap[oss.str()], ladderMap[lad], h.getStripNumber(), h.getSegment(), SectorTree::getSuperstripSize(h.getLayer(),h.getLadder()), isPSModule);
 	if(verbose){
 	  cout<<"#SUPERSTRIP : "<<(int)h.getLayer()<<" "<<hex<<"0x"<<std::setfill ('0') << std::setw (4)<<pat.getIntValue()<<dec<<endl;
 	  cout<<endl;

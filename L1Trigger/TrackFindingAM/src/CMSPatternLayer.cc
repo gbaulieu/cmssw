@@ -136,7 +136,7 @@ void CMSPatternLayer::setValues(short m, short phi, short strip, short seg){
     (seg&SEG_MASK)<<SEG_START_BIT;
 }
 
-void CMSPatternLayer::computeSuperstrip(short layerID, short module, short phi, short strip, short seg, int sstripSize, bool fake){
+void CMSPatternLayer::computeSuperstrip(short layerID, short module, short phi, short strip, short seg, int sstripSize, bool isPS, bool fake){
   if(fake){
     setValues(0, 15, 0, 0);
     return;
@@ -148,7 +148,7 @@ void CMSPatternLayer::computeSuperstrip(short layerID, short module, short phi, 
   /*
     On P/S modules segment values are ranging from 0 to 31 -> we only want 0 or 1
   */
-  if((layerID>=5 && layerID<=7) || (layerID>10 && phi<=8))
+  if(isPS)
     segment = segment/16;
   
   if(layerID<11){ //barrel
@@ -165,7 +165,8 @@ void CMSPatternLayer::computeSuperstrip(short layerID, short module, short phi, 
     setValues(z/2,phi, superStrip, z%2);//store 4 bits on module and 1 bit on segment
   }
   else{//endcap
-    //segment = 0;
+    if(!isPS)
+      segment = 0;
     setValues(module,phi, superStrip, segment);
   }
 }
@@ -597,4 +598,24 @@ vector<int> CMSPatternLayer::getHDSuperstrips(){
   return array;
 }
 
-
+int CMSPatternLayer::cmssw_layer_to_prbf2_layer(int cms_layer, bool isPS){
+  int layer_code = -1;
+  if(isPS){
+    if(cms_layer<11)
+      layer_code = cms_layer-5;
+    else{
+      if(cms_layer>15)
+	cms_layer=cms_layer-7;
+      layer_code = cms_layer-8;
+    }
+  }else{
+    if(cms_layer<11)
+      layer_code = cms_layer;
+    else{
+      if(cms_layer>15)
+	cms_layer=cms_layer-7;
+      layer_code = cms_layer;
+    }
+  }
+  return layer_code;
+}

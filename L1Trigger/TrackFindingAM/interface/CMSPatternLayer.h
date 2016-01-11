@@ -107,9 +107,10 @@ class CMSPatternLayer : public PatternLayer{
      \param strip The value of the stub's strip
      \param seg The value of the stub's segment
      \param sstripSize The size of a superstrip in numbner of strips
+     \param isPS True if we are on a P/S module
      \param fake True if you are building a fake superstrip
    **/
-  void computeSuperstrip(short layerID, short module, short phi, short strip, short seg, int sstripSize, bool fake=0);
+  void computeSuperstrip(short layerID, short module, short phi, short strip, short seg, int sstripSize, bool isPS, bool fake=0);
 
   /**
      \brief Returns a string representation of the PatternLayer
@@ -208,6 +209,14 @@ class CMSPatternLayer : public PatternLayer{
      \return The number of modules on the layer layerID / ladder ladderID
   **/
   static int getNbModules(int layerID, int ladderID);  
+
+  /**
+     \brief Convertion from CMSSW layer numbering (one id per layer/disk) to PRBF2 numbering (id depends on the layer AND the module type)
+     \param cms_layer The CMSSW layer ID (5 to 10 for barrel, 11 to 15 for first TEC and 18 to 22 for second TEC)
+     \param isPS True if the module is PS, False if 2S
+     \return The PRBF2 layer ID
+  **/
+  static int cmssw_layer_to_prbf2_layer(int cms_layer, bool isPS);
 
  /**
      \brief Check if the PatternLayer is a fake one (used on layers not crossed by the track)

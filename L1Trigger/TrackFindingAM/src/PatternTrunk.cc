@@ -188,3 +188,11 @@ bool PatternTrunk::checkPattern(Pattern* hp){
     return lowDefPattern->contains(hp);
   }
 }
+
+void PatternTrunk::setOrderInChip(int i){
+  lowDefPattern->setOrderInChip(i);
+}
+
+int PatternTrunk::getOrderInChip() const{
+  return lowDefPattern->getOrderInChip();
+}

@@ -126,6 +126,17 @@ class PatternTrunk{
    **/
   bool checkPattern(Pattern* hp);
 
+  /**
+     \brief Set the orderInChip information to the LD pattern
+     \param i The theoretical order in the chip
+   **/
+  void setOrderInChip(int i);
+  /**
+     \brief Get the orderInChip information of the LD pattern
+     \return The theoretical order in the chip
+   **/
+  int getOrderInChip() const;
+
  private:
   GradedPattern* lowDefPattern;
   map<string, GradedPattern*> fullDefPatterns;

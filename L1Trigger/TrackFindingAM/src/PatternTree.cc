@@ -299,11 +299,19 @@ bool comparePatterns(PatternTrunk* p1, PatternTrunk* p2){
 void PatternTree::truncate(int nbPatterns){
   switchToVector();
   sort(v_patterns.begin(),v_patterns.end(), comparePatterns);
-  cout<<"Scores ranging from  : "<<v_patterns[0]->getLDPatternGrade()<<" to "<<v_patterns[v_patterns.size()-1]->getLDPatternGrade()<<endl;
-  int nbToDelete = v_patterns.size()-nbPatterns;
-  for(int i=0;i<nbToDelete;i++){
-    v_patterns.pop_back();
+
+  if(nbPatterns>0){
+    cout<<"Scores ranging from  : "<<v_patterns[0]->getLDPatternGrade()<<" to "<<v_patterns[v_patterns.size()-1]->getLDPatternGrade()<<endl;
+    int nbToDelete = v_patterns.size()-nbPatterns;
+    for(int i=0;i<nbToDelete;i++){
+      v_patterns.pop_back();
+    }
+    cout<<"Keep "<<v_patterns.size()<<" patterns with scores ranging from  : "<<v_patterns[0]->getLDPatternGrade()<<" to "<<v_patterns[v_patterns.size()-1]->getLDPatternGrade()<<endl;
   }
-  cout<<"Keep "<<v_patterns.size()<<" patterns with scores ranging from  : "<<v_patterns[0]->getLDPatternGrade()<<" to "<<v_patterns[v_patterns.size()-1]->getLDPatternGrade()<<endl;
+
+  for(unsigned int i=0;i<v_patterns.size();i++){
+    v_patterns[i]->setOrderInChip(i);
+  }
+
   switchToMap();
 }

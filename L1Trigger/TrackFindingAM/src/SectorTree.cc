@@ -215,6 +215,12 @@ int SectorTree::getSuperstripSize(int layer_id, int ladder_id){
   }
 }
 
+map<string, int> SectorTree::getSuperstripSize_lut(){
+  if(superstripSize_lut.size()==0)
+    superstripSize_lut = loadSStripSizeLUT(ss_size_filename);
+  return superstripSize_lut;
+}
+
 bool SectorTree::hasSameSuperstripSizes(const SectorTree& st){
   //all of this is in st
   for(map<string, int>::iterator it=superstripSize_lut.begin();it!=superstripSize_lut.end();it++){

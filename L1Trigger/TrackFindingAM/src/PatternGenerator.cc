@@ -308,6 +308,7 @@ int PatternGenerator::generate(TChain* TT, int* evtIndex, int evtNumber, int* nb
       short ladder = -1;
       short strip = -1;
       short seg = -1;
+      bool isPSModule = false;
       if(stub_number==-2){//creation of a fake superstrip
 	module=0;
 	strip=0;
@@ -325,6 +326,9 @@ int PatternGenerator::generate(TChain* TT, int* evtIndex, int evtNumber, int* nb
 	value = value-module*100;
 	seg = value;
 	seg = CMSPatternLayer::getSegmentCode(tracker_layers[j], CMSPatternLayer::getLadderCode(tracker_layers[j],ladder), seg);	
+	if((tracker_layers[j]>=5 && tracker_layers[j]<=7) || (tracker_layers[j]>10 && CMSPatternLayer::getLadderCode(tracker_layers[j],ladder)<=8)){
+	  isPSModule=true;
+	}
 	//convertion to sector relative positions
 	module = sector->getModuleCode(tracker_layers[j], CMSPatternLayer::getLadderCode(tracker_layers[j],ladder), CMSPatternLayer::getModuleCode(tracker_layers[j],module));
 	ladder=sector->getLadderCode(tracker_layers[j],CMSPatternLayer::getLadderCode(tracker_layers[j],ladder));
@@ -344,7 +348,7 @@ int PatternGenerator::generate(TChain* TT, int* evtIndex, int evtNumber, int* nb
       CMSPatternLayer pat;
       CMSPatternLayer lowDef_layer;
       try{
-	pat.computeSuperstrip(tracker_layers[j], module, ladder, strip, seg, SectorTree::getSuperstripSize(tracker_layers[j],CMSPatternLayer::getLadderCode(tracker_layers[j],ladder_ori)), stub_number==-2);
+	pat.computeSuperstrip(tracker_layers[j], module, ladder, strip, seg, SectorTree::getSuperstripSize(tracker_layers[j],CMSPatternLayer::getLadderCode(tracker_layers[j],ladder_ori)), isPSModule, stub_number==-2);
       }
       catch (const std::out_of_range& oor) {
 	std::cerr << "One of the stubs can not be linked to a superstrip"<<endl;

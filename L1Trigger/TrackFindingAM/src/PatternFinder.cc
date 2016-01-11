@@ -87,496 +87,131 @@ void PatternFinder::setEventsFile(string f){
 
 void PatternFinder::mergeFiles(string outputFile, string inputFile1, string inputFile2){
 
-  const int MAX_NB_PATTERNS = 1500;
-  const int MAX_NB_HITS = 100;
-  const int MAX_NB_LADDERS_PER_LAYER = 16;
-  const int MAX_NB_LAYERS = 9;
+  //used to generate the root dictionnary to support vector<vector<int>> and vector<float>
+  gROOT->ProcessLine(".L Loader.C+");
 
   /*********************INPUT 1 FILE *************************************/
 
-  TChain *PATT1    = new TChain("Patterns"); // infos about patterns
-  TChain *SEC1    = new TChain("Sectors");   //infos about sectors
+  TChain *PATT1    = new TChain("L1tracks"); // infos about patterns
   PATT1->Add(inputFile1.c_str());
-  SEC1->Add(inputFile1.c_str());
 
-  int input1_nb_layers;
-  int input1_nb_patterns=0;
-  int input1_ori_nb_stubs=0;
-  int input1_sel_nb_stubs=0;
-  int input1_event_id;
-  int *input1_superStrip_layer_0 = new int[MAX_NB_PATTERNS];
-  int *input1_superStrip_layer_1 = new int[MAX_NB_PATTERNS];
-  int *input1_superStrip_layer_2 = new int[MAX_NB_PATTERNS];
-  int *input1_superStrip_layer_3 = new int[MAX_NB_PATTERNS];
-  int *input1_superStrip_layer_4 = new int[MAX_NB_PATTERNS];
-  int *input1_superStrip_layer_5 = new int[MAX_NB_PATTERNS];
-  int *input1_superStrip_layer_6 = new int[MAX_NB_PATTERNS];
-  int *input1_superStrip_layer_7 = new int[MAX_NB_PATTERNS];
-  int *input1_superStrip_layer_8 = new int[MAX_NB_PATTERNS];
-  int *input1_pattern_sector_id = new int[MAX_NB_PATTERNS];
-  float  *input1_pattern_pt = new float[MAX_NB_PATTERNS];
-
-  //Array containing the strips arrays
-  int* input1_superStrips[MAX_NB_LAYERS];
-  input1_superStrips[0]=input1_superStrip_layer_0;
-  input1_superStrips[1]=input1_superStrip_layer_1;
-  input1_superStrips[2]=input1_superStrip_layer_2;
-  input1_superStrips[3]=input1_superStrip_layer_3;
-  input1_superStrips[4]=input1_superStrip_layer_4;
-  input1_superStrips[5]=input1_superStrip_layer_5;
-  input1_superStrips[6]=input1_superStrip_layer_6;
-  input1_superStrips[7]=input1_superStrip_layer_7;
-  input1_superStrips[8]=input1_superStrip_layer_8;
-
-  int input1_sector_id=0;
-  int input1_sector_layers=0;
-  int input1_nb_ladders_layer[MAX_NB_LAYERS];
-  int input1_sector_layer_list[MAX_NB_LAYERS];
-  int input1_sector_layer_0[MAX_NB_LADDERS_PER_LAYER];
-  int input1_sector_layer_1[MAX_NB_LADDERS_PER_LAYER];
-  int input1_sector_layer_2[MAX_NB_LADDERS_PER_LAYER];
-  int input1_sector_layer_3[MAX_NB_LADDERS_PER_LAYER];
-  int input1_sector_layer_4[MAX_NB_LADDERS_PER_LAYER];
-  int input1_sector_layer_5[MAX_NB_LADDERS_PER_LAYER];
-  int input1_sector_layer_6[MAX_NB_LADDERS_PER_LAYER];
-  int input1_sector_layer_7[MAX_NB_LADDERS_PER_LAYER];
-  int input1_sector_layer_8[MAX_NB_LADDERS_PER_LAYER];
-
-  int* input1_sector_layers_detail[MAX_NB_LAYERS];
-  input1_sector_layers_detail[0]=input1_sector_layer_0;
-  input1_sector_layers_detail[1]=input1_sector_layer_1;
-  input1_sector_layers_detail[2]=input1_sector_layer_2;
-  input1_sector_layers_detail[3]=input1_sector_layer_3;
-  input1_sector_layers_detail[4]=input1_sector_layer_4;
-  input1_sector_layers_detail[5]=input1_sector_layer_5;
-  input1_sector_layers_detail[6]=input1_sector_layer_6;
-  input1_sector_layers_detail[7]=input1_sector_layer_7;
-  input1_sector_layers_detail[8]=input1_sector_layer_8;
-
-  int *input1_nbHitPerPattern = new int[MAX_NB_PATTERNS];
-  int input1_totalNbHits=0;
-  int input1_nbTracks = 0;
-  float *input1_track_pt = new float[MAX_NB_PATTERNS];
-  float *input1_track_phi = new float[MAX_NB_PATTERNS];
-  float *input1_track_d0 = new float[MAX_NB_PATTERNS];
-  float *input1_track_eta = new float[MAX_NB_PATTERNS];
-  float *input1_track_z0 = new float[MAX_NB_PATTERNS];
-  short *input1_hit_layer = new short[MAX_NB_PATTERNS*MAX_NB_HITS];
-  short *input1_hit_ladder = new short[MAX_NB_PATTERNS*MAX_NB_HITS];
-  short *input1_hit_zPos = new short[MAX_NB_PATTERNS*MAX_NB_HITS];
-  short *input1_hit_segment = new short[MAX_NB_PATTERNS*MAX_NB_HITS];
-  short *input1_hit_strip = new short[MAX_NB_PATTERNS*MAX_NB_HITS];
-  int *input1_hit_tp = new int[MAX_NB_PATTERNS*MAX_NB_HITS];
-  int *input1_hit_idx = new int[MAX_NB_PATTERNS*MAX_NB_HITS];
-  float *input1_hit_ptGEN = new float[MAX_NB_PATTERNS*MAX_NB_HITS];
-  float *input1_hit_etaGEN = new float[MAX_NB_PATTERNS*MAX_NB_HITS];
-  float *input1_hit_phi0GEN = new float[MAX_NB_PATTERNS*MAX_NB_HITS];
-  float *input1_hit_ip = new float[MAX_NB_PATTERNS*MAX_NB_HITS];
-  float *input1_hit_x = new float[MAX_NB_PATTERNS*MAX_NB_HITS];
-  float *input1_hit_y = new float[MAX_NB_PATTERNS*MAX_NB_HITS];
-  float *input1_hit_z = new float[MAX_NB_PATTERNS*MAX_NB_HITS];
-  float *input1_hit_X0 = new float[MAX_NB_PATTERNS*MAX_NB_HITS];
-  float *input1_hit_Y0 = new float[MAX_NB_PATTERNS*MAX_NB_HITS];
-  float *input1_hit_Z0 = new float[MAX_NB_PATTERNS*MAX_NB_HITS];
-  float *input1_hit_bend = new float[MAX_NB_PATTERNS*MAX_NB_HITS];
+  // Tree definition ////////////////////
+  int event_id_1;
+  int m_patt_1=0;
+  std::vector< std::vector<int> > *m_patt_links_1   = new  std::vector< std::vector<int> >;
+  std::vector<int> *m_patt_secid_1   = new  std::vector<int>;
+  std::vector<int> *m_patt_miss_1    = new  std::vector<int>;
   
-  SEC1->SetBranchAddress("sectorID",            &input1_sector_id);//ID du secteur
-  SEC1->SetBranchAddress("nbLayers",            &input1_sector_layers);// nombre de layers dans le secteur
-  SEC1->SetBranchAddress("layer",                  input1_sector_layer_list);//layers ID
-  SEC1->SetBranchAddress("nb_ladders_layer",       input1_nb_ladders_layer); // nombre de ladders pour chaque layer
-  SEC1->SetBranchAddress("sectorLadders_layer_0",  input1_sector_layer_0);//liste des ladders pour layer 0
-  SEC1->SetBranchAddress("sectorLadders_layer_1",  input1_sector_layer_1);
-  SEC1->SetBranchAddress("sectorLadders_layer_2",  input1_sector_layer_2);
-  SEC1->SetBranchAddress("sectorLadders_layer_3",  input1_sector_layer_3);
-  SEC1->SetBranchAddress("sectorLadders_layer_4",  input1_sector_layer_4);
-  SEC1->SetBranchAddress("sectorLadders_layer_5",  input1_sector_layer_5);
-  SEC1->SetBranchAddress("sectorLadders_layer_6",  input1_sector_layer_6);
-  SEC1->SetBranchAddress("sectorLadders_layer_7",  input1_sector_layer_7);
-  SEC1->SetBranchAddress("sectorLadders_layer_8",  input1_sector_layer_8);
+  int nb_tracks_1=0;
+  std::vector<float> *m_trk_pt_1       = new  std::vector<float>;
+  std::vector<float> *m_trk_eta_1      = new  std::vector<float>;
+  std::vector<float> *m_trk_phi_1      = new  std::vector<float>;
+  std::vector<float> *m_trk_z_1        = new  std::vector<float>;
+  std::vector< std::vector<int> > *m_trk_links_1    = new  std::vector< std::vector<int> >;
+  std::vector<int> *m_trk_secid_1    = new  std::vector<int>;
+  /////////////////////////////////////////
+
+  // Branches definition
+
+  PATT1->SetBranchAddress("L1evt", &event_id_1); // Simple evt number or event ID
   
-  PATT1->SetBranchAddress("nbLayers",            &input1_nb_layers);//nombre de layers pour les patterns
-  PATT1->SetBranchAddress("nbPatterns",          &input1_nb_patterns); // nombre de patterns dans l'evenement
-  PATT1->SetBranchAddress("nbStubsInEvt",        &input1_ori_nb_stubs); // nombre de stubs dans l'evenement initial
-  PATT1->SetBranchAddress("nbStubsInPat",        &input1_sel_nb_stubs); // nombre de stubs uniques dans les patterns
-  PATT1->SetBranchAddress("eventID",             &input1_event_id); // ID de l'evenement (le meme que dans le fichier de simulation)
-  PATT1->SetBranchAddress("sectorID",            input1_pattern_sector_id);// ID du secteur du pattern (permet de retrouver le secteur dans le premier TTree)
-  PATT1->SetBranchAddress("patternPT",           input1_pattern_pt);
-  PATT1->SetBranchAddress("superStrip0",         input1_superStrip_layer_0);// tableau de superstrips pour le layer 0
-  PATT1->SetBranchAddress("superStrip1",         input1_superStrip_layer_1);
-  PATT1->SetBranchAddress("superStrip2",         input1_superStrip_layer_2);
-  PATT1->SetBranchAddress("superStrip3",         input1_superStrip_layer_3);
-  PATT1->SetBranchAddress("superStrip4",         input1_superStrip_layer_4);
-  PATT1->SetBranchAddress("superStrip5",         input1_superStrip_layer_5);
-  PATT1->SetBranchAddress("superStrip6",         input1_superStrip_layer_6);
-  PATT1->SetBranchAddress("superStrip7",         input1_superStrip_layer_7);
-  PATT1->SetBranchAddress("superStrip8",         input1_superStrip_layer_8);
-  PATT1->SetBranchAddress("total_nb_stubs",      &input1_totalNbHits);
-  PATT1->SetBranchAddress("nbTracks",            &input1_nbTracks);
-  PATT1->SetBranchAddress("nbStubs",             input1_nbHitPerPattern); // nombre de stubs contenus dans chaque pattern
-
-  PATT1->SetBranchAddress("track_pt",            input1_track_pt); // PT of fitted tracks
-  PATT1->SetBranchAddress("track_phi",           input1_track_phi); // PHI0 of fitted tracks
-  PATT1->SetBranchAddress("track_d0",            input1_track_d0); // D0 of fitted tracks
-  PATT1->SetBranchAddress("track_eta",           input1_track_eta); // ETA of fitted tracks
-  PATT1->SetBranchAddress("track_z0",            input1_track_z0); // Z0 of fitted tracks
-
-  PATT1->SetBranchAddress("stub_layers",         input1_hit_layer);//layer du stub
-  PATT1->SetBranchAddress("stub_ladders",        input1_hit_ladder);//ladder du stub
-  PATT1->SetBranchAddress("stub_module",         input1_hit_zPos);//position en Z du module du stub
-  PATT1->SetBranchAddress("stub_segment",        input1_hit_segment);//segment du stub
-  PATT1->SetBranchAddress("stub_strip",          input1_hit_strip);//numero de strip du stub
-  PATT1->SetBranchAddress("stub_tp",             input1_hit_tp);//numero de la particule du stub
-  PATT1->SetBranchAddress("stub_idx",             input1_hit_idx);//index du stub dans l'evenement
-  PATT1->SetBranchAddress("stub_ptGEN",          input1_hit_ptGEN);//PT de la particule du stub
-  PATT1->SetBranchAddress("stub_etaGEN",         input1_hit_etaGEN);//ETA de la particule du stub
-  PATT1->SetBranchAddress("stub_phi0GEN",        input1_hit_phi0GEN);//PHI0 de la particule du stub
-  PATT1->SetBranchAddress("stub_IP",             input1_hit_ip);//distance avec l'IP
-  PATT1->SetBranchAddress("stub_x",              input1_hit_x);
-  PATT1->SetBranchAddress("stub_y",              input1_hit_y);
-  PATT1->SetBranchAddress("stub_z",              input1_hit_z);
-  PATT1->SetBranchAddress("stub_X0",             input1_hit_X0);
-  PATT1->SetBranchAddress("stub_Y0",             input1_hit_Y0);
-  PATT1->SetBranchAddress("stub_Z0",             input1_hit_Z0);
-  PATT1->SetBranchAddress("stub_bend",             input1_hit_bend);
+  PATT1->SetBranchAddress("L1PATT_n",           &m_patt_1);
+  PATT1->SetBranchAddress("L1PATT_links",       &m_patt_links_1);
+  PATT1->SetBranchAddress("L1PATT_secid",       &m_patt_secid_1);
+  PATT1->SetBranchAddress("L1PATT_nmiss",       &m_patt_miss_1);
+  
+  PATT1->SetBranchAddress("L1TRK_n",            &nb_tracks_1);
+  PATT1->SetBranchAddress("L1TRK_links",        &m_trk_links_1);
+  PATT1->SetBranchAddress("L1TRK_secid",        &m_trk_secid_1);
+  PATT1->SetBranchAddress("L1TRK_pt",           &m_trk_pt_1);
+  PATT1->SetBranchAddress("L1TRK_phi",          &m_trk_phi_1);
+  PATT1->SetBranchAddress("L1TRK_z",            &m_trk_z_1);
+  PATT1->SetBranchAddress("L1TRK_eta",          &m_trk_eta_1);
 
   /*********************************************/
-
   /*********************INPUT 2 FILE *************************************/
 
-  TChain *PATT2    = new TChain("Patterns"); // infos about patterns
-  TChain *SEC2    = new TChain("Sectors");   //infos about sectors
+  TChain *PATT2    = new TChain("L1tracks"); // infos about patterns
   PATT2->Add(inputFile2.c_str());
-  SEC2->Add(inputFile2.c_str());
 
-  int input2_nb_layers;
-  int input2_nb_patterns=0;
-  int input2_ori_nb_stubs=0;
-  int input2_sel_nb_stubs=0;
-  int input2_event_id;
-  int *input2_superStrip_layer_0 = new int[MAX_NB_PATTERNS];
-  int *input2_superStrip_layer_1 = new int[MAX_NB_PATTERNS];
-  int *input2_superStrip_layer_2 = new int[MAX_NB_PATTERNS];
-  int *input2_superStrip_layer_3 = new int[MAX_NB_PATTERNS];
-  int *input2_superStrip_layer_4 = new int[MAX_NB_PATTERNS];
-  int *input2_superStrip_layer_5 = new int[MAX_NB_PATTERNS];
-  int *input2_superStrip_layer_6 = new int[MAX_NB_PATTERNS];
-  int *input2_superStrip_layer_7 = new int[MAX_NB_PATTERNS];
-  int *input2_superStrip_layer_8 = new int[MAX_NB_PATTERNS];
-  int *input2_pattern_sector_id = new int[MAX_NB_PATTERNS];
-  float  *input2_pattern_pt = new float[MAX_NB_PATTERNS];
-
-  //Array containing the strips arrays
-  int* input2_superStrips[MAX_NB_LAYERS];
-  input2_superStrips[0]=input2_superStrip_layer_0;
-  input2_superStrips[1]=input2_superStrip_layer_1;
-  input2_superStrips[2]=input2_superStrip_layer_2;
-  input2_superStrips[3]=input2_superStrip_layer_3;
-  input2_superStrips[4]=input2_superStrip_layer_4;
-  input2_superStrips[5]=input2_superStrip_layer_5;
-  input2_superStrips[6]=input2_superStrip_layer_6;
-  input2_superStrips[7]=input2_superStrip_layer_7;
-  input2_superStrips[8]=input2_superStrip_layer_8;
-
-  int input2_sector_id=0;
-  int input2_sector_layers=0;
-  int input2_nb_ladders_layer[MAX_NB_LAYERS];
-  int input2_sector_layer_list[MAX_NB_LAYERS];
-  int input2_sector_layer_0[MAX_NB_LADDERS_PER_LAYER];
-  int input2_sector_layer_1[MAX_NB_LADDERS_PER_LAYER];
-  int input2_sector_layer_2[MAX_NB_LADDERS_PER_LAYER];
-  int input2_sector_layer_3[MAX_NB_LADDERS_PER_LAYER];
-  int input2_sector_layer_4[MAX_NB_LADDERS_PER_LAYER];
-  int input2_sector_layer_5[MAX_NB_LADDERS_PER_LAYER];
-  int input2_sector_layer_6[MAX_NB_LADDERS_PER_LAYER];
-  int input2_sector_layer_7[MAX_NB_LADDERS_PER_LAYER];
-  int input2_sector_layer_8[MAX_NB_LADDERS_PER_LAYER];
-
-  int* input2_sector_layers_detail[MAX_NB_LAYERS];
-  input2_sector_layers_detail[0]=input2_sector_layer_0;
-  input2_sector_layers_detail[1]=input2_sector_layer_1;
-  input2_sector_layers_detail[2]=input2_sector_layer_2;
-  input2_sector_layers_detail[3]=input2_sector_layer_3;
-  input2_sector_layers_detail[4]=input2_sector_layer_4;
-  input2_sector_layers_detail[5]=input2_sector_layer_5;
-  input2_sector_layers_detail[6]=input2_sector_layer_6;
-  input2_sector_layers_detail[7]=input2_sector_layer_7;
-  input2_sector_layers_detail[8]=input2_sector_layer_8;
-
-  int *input2_nbHitPerPattern = new int[MAX_NB_PATTERNS];
-  int input2_totalNbHits=0;
-  int input2_nbTracks = 0;
-  float *input2_track_pt = new float[MAX_NB_PATTERNS];
-  float *input2_track_phi = new float[MAX_NB_PATTERNS];
-  float *input2_track_d0 = new float[MAX_NB_PATTERNS];
-  float *input2_track_eta = new float[MAX_NB_PATTERNS];
-  float *input2_track_z0 = new float[MAX_NB_PATTERNS];
-  short *input2_hit_layer = new short[MAX_NB_PATTERNS*MAX_NB_HITS];
-  short *input2_hit_ladder = new short[MAX_NB_PATTERNS*MAX_NB_HITS];
-  short *input2_hit_zPos = new short[MAX_NB_PATTERNS*MAX_NB_HITS];
-  short *input2_hit_segment = new short[MAX_NB_PATTERNS*MAX_NB_HITS];
-  short *input2_hit_strip = new short[MAX_NB_PATTERNS*MAX_NB_HITS];
-  int *input2_hit_tp = new int[MAX_NB_PATTERNS*MAX_NB_HITS];
-  int *input2_hit_idx = new int[MAX_NB_PATTERNS*MAX_NB_HITS];
-  float *input2_hit_ptGEN = new float[MAX_NB_PATTERNS*MAX_NB_HITS];
-  float *input2_hit_etaGEN = new float[MAX_NB_PATTERNS*MAX_NB_HITS];
-  float *input2_hit_phi0GEN = new float[MAX_NB_PATTERNS*MAX_NB_HITS];
-  float *input2_hit_ip = new float[MAX_NB_PATTERNS*MAX_NB_HITS];
-  float *input2_hit_x = new float[MAX_NB_PATTERNS*MAX_NB_HITS];
-  float *input2_hit_y = new float[MAX_NB_PATTERNS*MAX_NB_HITS];
-  float *input2_hit_z = new float[MAX_NB_PATTERNS*MAX_NB_HITS];
-  float *input2_hit_X0 = new float[MAX_NB_PATTERNS*MAX_NB_HITS];
-  float *input2_hit_Y0 = new float[MAX_NB_PATTERNS*MAX_NB_HITS];
-  float *input2_hit_Z0 = new float[MAX_NB_PATTERNS*MAX_NB_HITS];
-  float *input2_hit_bend = new float[MAX_NB_PATTERNS*MAX_NB_HITS];
+  // Tree definition ////////////////////
+  int event_id_2;
+  int m_patt_2=0;
+  std::vector< std::vector<int> > *m_patt_links_2   = new  std::vector< std::vector<int> >;
+  std::vector<int> *m_patt_secid_2   = new  std::vector<int>;
+  std::vector<int> *m_patt_miss_2    = new  std::vector<int>;
   
-  SEC2->SetBranchAddress("sectorID",            &input2_sector_id);//ID du secteur
-  SEC2->SetBranchAddress("nbLayers",            &input2_sector_layers);// nombre de layers dans le secteur
-  SEC2->SetBranchAddress("layer",                  input2_sector_layer_list);//layers ID
-  SEC2->SetBranchAddress("nb_ladders_layer",       input2_nb_ladders_layer); // nombre de ladders pour chaque layer
-  SEC2->SetBranchAddress("sectorLadders_layer_0",  input2_sector_layer_0);//liste des ladders pour layer 0
-  SEC2->SetBranchAddress("sectorLadders_layer_1",  input2_sector_layer_1);
-  SEC2->SetBranchAddress("sectorLadders_layer_2",  input2_sector_layer_2);
-  SEC2->SetBranchAddress("sectorLadders_layer_3",  input2_sector_layer_3);
-  SEC2->SetBranchAddress("sectorLadders_layer_4",  input2_sector_layer_4);
-  SEC2->SetBranchAddress("sectorLadders_layer_5",  input2_sector_layer_5);
-  SEC2->SetBranchAddress("sectorLadders_layer_5",  input2_sector_layer_6);
-  SEC2->SetBranchAddress("sectorLadders_layer_5",  input2_sector_layer_7);
-  SEC2->SetBranchAddress("sectorLadders_layer_5",  input2_sector_layer_8);
+  int nb_tracks_2=0;
+  std::vector<float> *m_trk_pt_2       = new  std::vector<float>;
+  std::vector<float> *m_trk_eta_2      = new  std::vector<float>;
+  std::vector<float> *m_trk_phi_2      = new  std::vector<float>;
+  std::vector<float> *m_trk_z_2        = new  std::vector<float>;
+  std::vector< std::vector<int> > *m_trk_links_2    = new  std::vector< std::vector<int> >;
+  std::vector<int> *m_trk_secid_2    = new  std::vector<int>;
+  /////////////////////////////////////////
+
+  // Branches definition
+
+  PATT2->SetBranchAddress("L1evt", &event_id_2); // Simple evt number or event ID
   
-  PATT2->SetBranchAddress("nbLayers",            &input2_nb_layers);//nombre de layers pour les patterns
-  PATT2->SetBranchAddress("nbPatterns",          &input2_nb_patterns); // nombre de patterns dans l'evenement
-  PATT2->SetBranchAddress("nbStubsInEvt",        &input2_ori_nb_stubs); // nombre de stubs dans l'evenement initial
-  PATT2->SetBranchAddress("nbStubsInPat",        &input2_sel_nb_stubs); // nombre de stubs uniques dans les patterns
-  PATT2->SetBranchAddress("eventID",             &input2_event_id); // ID de l'evenement (le meme que dans le fichier de simulation)
-  PATT2->SetBranchAddress("sectorID",            input2_pattern_sector_id);// ID du secteur du pattern (permet de retrouver le secteur dans le premier TTree)
-  PATT2->SetBranchAddress("patternPT",           input2_pattern_pt);
-  PATT2->SetBranchAddress("superStrip0",         input2_superStrip_layer_0);// tableau de superstrips pour le layer 0
-  PATT2->SetBranchAddress("superStrip1",         input2_superStrip_layer_1);
-  PATT2->SetBranchAddress("superStrip2",         input2_superStrip_layer_2);
-  PATT2->SetBranchAddress("superStrip3",         input2_superStrip_layer_3);
-  PATT2->SetBranchAddress("superStrip4",         input2_superStrip_layer_4);
-  PATT2->SetBranchAddress("superStrip5",         input2_superStrip_layer_5);
-  PATT2->SetBranchAddress("superStrip6",         input2_superStrip_layer_6);
-  PATT2->SetBranchAddress("superStrip7",         input2_superStrip_layer_7);
-  PATT2->SetBranchAddress("superStrip8",         input2_superStrip_layer_8);
-  PATT2->SetBranchAddress("total_nb_stubs",      &input2_totalNbHits);
-  PATT2->SetBranchAddress("nbTracks",            &input2_nbTracks);
-  PATT2->SetBranchAddress("nbStubs",             input2_nbHitPerPattern); // nombre de stubs contenus dans chaque pattern
+  PATT2->SetBranchAddress("L1PATT_n",           &m_patt_2);
+  PATT2->SetBranchAddress("L1PATT_links",       &m_patt_links_2);
+  PATT2->SetBranchAddress("L1PATT_secid",       &m_patt_secid_2);
+  PATT2->SetBranchAddress("L1PATT_nmiss",       &m_patt_miss_2);
+  
+  PATT2->SetBranchAddress("L1TRK_n",            &nb_tracks_2);
+  PATT2->SetBranchAddress("L1TRK_links",        &m_trk_links_2);
+  PATT2->SetBranchAddress("L1TRK_secid",        &m_trk_secid_2);
+  PATT2->SetBranchAddress("L1TRK_pt",           &m_trk_pt_2);
+  PATT2->SetBranchAddress("L1TRK_phi",          &m_trk_phi_2);
+  PATT2->SetBranchAddress("L1TRK_z",            &m_trk_z_2);
+  PATT2->SetBranchAddress("L1TRK_eta",          &m_trk_eta_2);
 
-  PATT2->SetBranchAddress("track_pt",            input2_track_pt); // PT of fitted tracks
-  PATT2->SetBranchAddress("track_phi",           input2_track_phi); // PHI0 of fitted tracks
-  PATT2->SetBranchAddress("track_d0",            input2_track_d0); // D0 of fitted tracks
-  PATT2->SetBranchAddress("track_eta",           input2_track_eta); // ETA of fitted tracks
-  PATT2->SetBranchAddress("track_z0",            input2_track_z0); // Z0 of fitted tracks
-
-  PATT2->SetBranchAddress("stub_layers",         input2_hit_layer);//layer du stub
-  PATT2->SetBranchAddress("stub_ladders",        input2_hit_ladder);//ladder du stub
-  PATT2->SetBranchAddress("stub_module",         input2_hit_zPos);//position en Z du module du stub
-  PATT2->SetBranchAddress("stub_segment",        input2_hit_segment);//segment du stub
-  PATT2->SetBranchAddress("stub_strip",          input2_hit_strip);//numero de strip du stub
-  PATT2->SetBranchAddress("stub_tp",             input2_hit_tp);//numero de la particule du stub
-  PATT2->SetBranchAddress("stub_idx",             input2_hit_idx);//index du stub dans l'evenement
-  PATT2->SetBranchAddress("stub_ptGEN",          input2_hit_ptGEN);//PT de la particule du stub
-  PATT2->SetBranchAddress("stub_etaGEN",         input2_hit_etaGEN);//PT de la particule du stub
-  PATT2->SetBranchAddress("stub_phi0GEN",        input2_hit_phi0GEN);//PT de la particule du stub
-  PATT2->SetBranchAddress("stub_IP",             input2_hit_ip);//distance avec l'IP
-  PATT2->SetBranchAddress("stub_x",              input2_hit_x);
-  PATT2->SetBranchAddress("stub_y",              input2_hit_y);
-  PATT2->SetBranchAddress("stub_z",              input2_hit_z);
-  PATT2->SetBranchAddress("stub_X0",             input2_hit_X0);
-  PATT2->SetBranchAddress("stub_Y0",             input2_hit_Y0);
-  PATT2->SetBranchAddress("stub_Z0",             input2_hit_Z0);
-  PATT2->SetBranchAddress("stub_bend",             input2_hit_bend);
-
+  /*********************************************/
+ 
   /*********************OUTPUT FILE *************************************/
-  TTree *PATTOUT    = new TTree("Patterns", "Active patterns");
-  TTree *SECOUT     = new TTree("Sectors", "Used Sectors");
+  TTree *PATTOUT    = new TTree("L1tracks", "Official L1-AM tracks info");
   TFile *t = new TFile(outputFile.c_str(),"recreate");
 
-  const int MAX_NB_OUTPUT_PATTERNS = 100000;
-
-  int nb_layers;
-  int nb_patterns=0;
-  int ori_nb_stubs=0;
-  int sel_nb_stubs=0;
+  // Tree definition ////////////////////
   int event_id;
-  int *superStrip_layer_0 = new int[MAX_NB_OUTPUT_PATTERNS];
-  int *superStrip_layer_1 = new int[MAX_NB_OUTPUT_PATTERNS];
-  int *superStrip_layer_2 = new int[MAX_NB_OUTPUT_PATTERNS];
-  int *superStrip_layer_3 = new int[MAX_NB_OUTPUT_PATTERNS];
-  int *superStrip_layer_4 = new int[MAX_NB_OUTPUT_PATTERNS];
-  int *superStrip_layer_5 = new int[MAX_NB_OUTPUT_PATTERNS];
-  int *superStrip_layer_6 = new int[MAX_NB_OUTPUT_PATTERNS];
-  int *superStrip_layer_7 = new int[MAX_NB_OUTPUT_PATTERNS];
-  int *superStrip_layer_8 = new int[MAX_NB_OUTPUT_PATTERNS];
-  int *pattern_sector_id = new int[MAX_NB_OUTPUT_PATTERNS];
-  float  *pattern_pt = new float[MAX_NB_OUTPUT_PATTERNS];
-
-  //Array containing the strips arrays
-  int* superStrips[MAX_NB_LAYERS];
-  superStrips[0]=superStrip_layer_0;
-  superStrips[1]=superStrip_layer_1;
-  superStrips[2]=superStrip_layer_2;
-  superStrips[3]=superStrip_layer_3;
-  superStrips[4]=superStrip_layer_4;
-  superStrips[5]=superStrip_layer_5;
-  superStrips[6]=superStrip_layer_6;
-  superStrips[7]=superStrip_layer_7;
-  superStrips[8]=superStrip_layer_8;
-
-  int sector_id=0;
-  int sector_layers=0;
-  int nb_ladders_layer[MAX_NB_LAYERS];
-  int sector_layer_list[MAX_NB_LAYERS];
-  int sector_layer_0[MAX_NB_LADDERS_PER_LAYER];
-  int sector_layer_1[MAX_NB_LADDERS_PER_LAYER];
-  int sector_layer_2[MAX_NB_LADDERS_PER_LAYER];
-  int sector_layer_3[MAX_NB_LADDERS_PER_LAYER];
-  int sector_layer_4[MAX_NB_LADDERS_PER_LAYER];
-  int sector_layer_5[MAX_NB_LADDERS_PER_LAYER];
-  int sector_layer_6[MAX_NB_LADDERS_PER_LAYER];
-  int sector_layer_7[MAX_NB_LADDERS_PER_LAYER];
-  int sector_layer_8[MAX_NB_LADDERS_PER_LAYER];
-
-  int* sector_layers_detail[MAX_NB_LAYERS];
-  sector_layers_detail[0]=sector_layer_0;
-  sector_layers_detail[1]=sector_layer_1;
-  sector_layers_detail[2]=sector_layer_2;
-  sector_layers_detail[3]=sector_layer_3;
-  sector_layers_detail[4]=sector_layer_4;
-  sector_layers_detail[5]=sector_layer_5;
-  sector_layers_detail[6]=sector_layer_6;
-  sector_layers_detail[7]=sector_layer_7;
-  sector_layers_detail[8]=sector_layer_8;
-
-  int *nbHitPerPattern = new int[MAX_NB_OUTPUT_PATTERNS];
-  int totalNbHits=0;
-  int nbTracks = 0;
-
-  float *track_pt = new float[MAX_NB_OUTPUT_PATTERNS];
-  float *track_phi = new float[MAX_NB_OUTPUT_PATTERNS];
-  float *track_d0 = new float[MAX_NB_OUTPUT_PATTERNS];
-  float *track_eta = new float[MAX_NB_OUTPUT_PATTERNS];
-  float *track_z0 = new float[MAX_NB_OUTPUT_PATTERNS];
-
-  short *hit_layer = new  short[MAX_NB_OUTPUT_PATTERNS*MAX_NB_HITS];
-  short *hit_ladder = new short[MAX_NB_OUTPUT_PATTERNS*MAX_NB_HITS];
-  short *hit_zPos = new short[MAX_NB_OUTPUT_PATTERNS*MAX_NB_HITS];
-  short *hit_segment = new  short[MAX_NB_OUTPUT_PATTERNS*MAX_NB_HITS];
-  short *hit_strip = new  short[MAX_NB_OUTPUT_PATTERNS*MAX_NB_HITS];
-  int *hit_tp = new int[MAX_NB_OUTPUT_PATTERNS*MAX_NB_HITS];
-  int *hit_idx = new int[MAX_NB_OUTPUT_PATTERNS*MAX_NB_HITS];
-  float *hit_ptGEN = new float[MAX_NB_OUTPUT_PATTERNS*MAX_NB_HITS];
-  float *hit_etaGEN = new float[MAX_NB_OUTPUT_PATTERNS*MAX_NB_HITS];
-  float *hit_phi0GEN = new float[MAX_NB_OUTPUT_PATTERNS*MAX_NB_HITS];
-  float *hit_ip = new float[MAX_NB_OUTPUT_PATTERNS*MAX_NB_HITS];
-  float *hit_x = new float[MAX_NB_OUTPUT_PATTERNS*MAX_NB_HITS];
-  float *hit_y = new float[MAX_NB_OUTPUT_PATTERNS*MAX_NB_HITS];
-  float *hit_z = new float[MAX_NB_OUTPUT_PATTERNS*MAX_NB_HITS];
-  float *hit_X0 = new float[MAX_NB_OUTPUT_PATTERNS*MAX_NB_HITS];
-  float *hit_Y0 = new float[MAX_NB_OUTPUT_PATTERNS*MAX_NB_HITS];
-  float *hit_Z0 = new float[MAX_NB_OUTPUT_PATTERNS*MAX_NB_HITS];
-  float *hit_bend = new float[MAX_NB_OUTPUT_PATTERNS*MAX_NB_HITS];
+  int m_patt=0;
+  std::vector< std::vector<int> > *m_patt_links   = new  std::vector< std::vector<int> >;
+  std::vector<int> *m_patt_secid   = new  std::vector<int>;
+  std::vector<int> *m_patt_miss    = new  std::vector<int>;
   
-  SECOUT->Branch("sectorID",            &sector_id);
-  SECOUT->Branch("nbLayers",            &sector_layers);
-  SECOUT->Branch("layer",                  sector_layer_list, "layer[nbLayers]/I");
-  SECOUT->Branch("nb_ladders_layer",       nb_ladders_layer, "nb_ladders_layer[nbLayers]/I");
-  SECOUT->Branch("sectorLadders_layer_0",  sector_layer_0, "sectorLadders_layer_0[16]/I");
-  SECOUT->Branch("sectorLadders_layer_1",  sector_layer_1, "sectorLadders_layer_1[16]/I");
-  SECOUT->Branch("sectorLadders_layer_2",  sector_layer_2, "sectorLadders_layer_2[16]/I");
-  SECOUT->Branch("sectorLadders_layer_3",  sector_layer_3, "sectorLadders_layer_3[16]/I");
-  SECOUT->Branch("sectorLadders_layer_4",  sector_layer_4, "sectorLadders_layer_4[16]/I");
-  SECOUT->Branch("sectorLadders_layer_5",  sector_layer_5, "sectorLadders_layer_5[16]/I");
-  SECOUT->Branch("sectorLadders_layer_6",  sector_layer_6, "sectorLadders_layer_6[16]/I");
-  SECOUT->Branch("sectorLadders_layer_7",  sector_layer_7, "sectorLadders_layer_7[16]/I");
-  SECOUT->Branch("sectorLadders_layer_8",  sector_layer_8, "sectorLadders_layer_8[16]/I");
+  int nb_tracks=0;
+  std::vector<float> *m_trk_pt       = new  std::vector<float>;
+  std::vector<float> *m_trk_eta      = new  std::vector<float>;
+  std::vector<float> *m_trk_phi      = new  std::vector<float>;
+  std::vector<float> *m_trk_z        = new  std::vector<float>;
+  std::vector< std::vector<int> > *m_trk_links    = new  std::vector< std::vector<int> >;
+  std::vector<int> *m_trk_secid    = new  std::vector<int>;
+  /////////////////////////////////////////
 
+  // Branches definition
 
-  PATTOUT->Branch("nbLayers",            &nb_layers);
-  PATTOUT->Branch("nbPatterns",          &nb_patterns);
-  PATTOUT->Branch("nbStubsInEvt",        &ori_nb_stubs);
-  PATTOUT->Branch("nbStubsInPat",        &sel_nb_stubs);
-  PATTOUT->Branch("eventID",             &event_id);
-  PATTOUT->Branch("sectorID",            pattern_sector_id, "sectorID[nbPatterns]/I");
-  PATTOUT->Branch("patternPT",           pattern_pt, "patternPT[nbPatterns]/F");
-  PATTOUT->Branch("superStrip0",         superStrip_layer_0, "superStrip0[nbPatterns]/I");
-  PATTOUT->Branch("superStrip1",         superStrip_layer_1, "superStrip1[nbPatterns]/I");
-  PATTOUT->Branch("superStrip2",         superStrip_layer_2, "superStrip2[nbPatterns]/I");
-  PATTOUT->Branch("superStrip3",         superStrip_layer_3, "superStrip3[nbPatterns]/I");
-  PATTOUT->Branch("superStrip4",         superStrip_layer_4, "superStrip4[nbPatterns]/I");
-  PATTOUT->Branch("superStrip5",         superStrip_layer_5, "superStrip5[nbPatterns]/I");
-  PATTOUT->Branch("superStrip6",         superStrip_layer_6, "superStrip6[nbPatterns]/I");
-  PATTOUT->Branch("superStrip7",         superStrip_layer_7, "superStrip7[nbPatterns]/I");
-  PATTOUT->Branch("superStrip8",         superStrip_layer_8, "superStrip8[nbPatterns]/I");
-  PATTOUT->Branch("nbStubs",             nbHitPerPattern, "nbStubs[nbPatterns]/I");
-  PATTOUT->Branch("total_nb_stubs",      &totalNbHits, "total_nb_stubs/I");
-  PATTOUT->Branch("nbTracks",            &nbTracks, "nbTracks/I");
-  PATTOUT->Branch("track_pt",            track_pt, "track_pt[nbPatterns]/F");
-  PATTOUT->Branch("track_phi",           track_phi, "track_phi[nbPatterns]/F");
-  PATTOUT->Branch("track_d0",            track_d0, "track_d0[nbPatterns]/F");
-  PATTOUT->Branch("track_eta",           track_eta, "track_eta[nbPatterns]/F");
-  PATTOUT->Branch("track_z0",            track_z0, "track_z0[nbPatterns]/F");
-  PATTOUT->Branch("stub_layers",         hit_layer,"stub_layers[total_nb_stubs]/S");
-  PATTOUT->Branch("stub_ladders",        hit_ladder, "stub_ladders[total_nb_stubs]/S");
-  PATTOUT->Branch("stub_module",         hit_zPos, "stub_module[total_nb_stubs]/S");
-  PATTOUT->Branch("stub_segment",        hit_segment, "stub_segment[total_nb_stubs]/S");
-  PATTOUT->Branch("stub_strip",          hit_strip, "stub_strip[total_nb_stubs]/S");
-  PATTOUT->Branch("stub_tp",             hit_tp,    "stub_tp[total_nb_stubs]/I");
-  PATTOUT->Branch("stub_idx",            hit_idx,    "stub_idx[total_nb_stubs]/I");
-  PATTOUT->Branch("stub_ptGEN",          hit_ptGEN, "stub_ptGEN[total_nb_stubs]/F");
-  PATTOUT->Branch("stub_etaGEN",         hit_etaGEN, "stub_etaGEN[total_nb_stubs]/F");
-  PATTOUT->Branch("stub_phi0GEN",        hit_phi0GEN, "stub_phi0GEN[total_nb_stubs]/F");
-  PATTOUT->Branch("stub_IP",             hit_ip, "stub_IP[total_nb_stubs]/F");
-  PATTOUT->Branch("stub_x",              hit_x, "stub_x[total_nb_stubs]/F");
-  PATTOUT->Branch("stub_y",              hit_y, "stub_y[total_nb_stubs]/F");
-  PATTOUT->Branch("stub_z",              hit_z, "stub_z[total_nb_stubs]/F");
-  PATTOUT->Branch("stub_X0",             hit_X0, "stub_X0[total_nb_stubs]/F");
-  PATTOUT->Branch("stub_Y0",             hit_Y0, "stub_Y0[total_nb_stubs]/F");
-  PATTOUT->Branch("stub_Z0",             hit_Z0, "stub_Z0[total_nb_stubs]/F");
-  PATTOUT->Branch("stub_bend",             hit_bend, "stub_bend[total_nb_stubs]/F");
+  PATTOUT->Branch("L1evt", &event_id); // Simple evt number or event ID
   
+  PATTOUT->Branch("L1PATT_n",           &m_patt);
+  PATTOUT->Branch("L1PATT_links",       &m_patt_links);
+  PATTOUT->Branch("L1PATT_secid",       &m_patt_secid);
+  PATTOUT->Branch("L1PATT_nmiss",       &m_patt_miss);
+  
+  PATTOUT->Branch("L1TRK_n",            &nb_tracks);
+  PATTOUT->Branch("L1TRK_links",        &m_trk_links);
+  PATTOUT->Branch("L1TRK_secid",        &m_trk_secid);
+  PATTOUT->Branch("L1TRK_pt",           &m_trk_pt);
+  PATTOUT->Branch("L1TRK_phi",          &m_trk_phi);
+  PATTOUT->Branch("L1TRK_z",            &m_trk_z);
+  PATTOUT->Branch("L1TRK_eta",          &m_trk_eta);
+
   /*********************************************/
-
-  /******************** MERGING SECTOR DATA************************/
-  vector<int> sector_list;
-  //copy all the content of the first file
-  int nb_entries1 = SEC1->GetEntries();
-  for(int i=0;i<nb_entries1;i++){
-    SEC1->GetEntry(i);
-    sector_id = input1_sector_id;
-    sector_list.push_back(sector_id);
-    sector_layers=input1_sector_layers;
-    memcpy(sector_layer_list, input1_sector_layer_list, sector_layers*sizeof(int));
-    memcpy(nb_ladders_layer, input1_nb_ladders_layer, sector_layers*sizeof(int));
-    for(int j=0;j<sector_layers;j++){
-      memcpy(sector_layers_detail[j],input1_sector_layers_detail[j],input1_nb_ladders_layer[j]*sizeof(int));
-    }
-    SECOUT->Fill();
-  }
-
-  //copy the content of the second file (only the unknown sectors)
-  int nb_entries2 = SEC2->GetEntries();
-  for(int i=0;i<nb_entries2;i++){
-    SEC2->GetEntry(i);
-    if(std::find(sector_list.begin(),sector_list.end(), input2_sector_id)==sector_list.end()){ // We do not know this sector
-      sector_id = input2_sector_id;
-      sector_list.push_back(sector_id);
-      sector_layers=input2_sector_layers;
-      memcpy(sector_layer_list, input2_sector_layer_list, sector_layers*sizeof(int));
-      memcpy(nb_ladders_layer, input2_nb_ladders_layer, sector_layers*sizeof(int));
-      for(int j=0;j<sector_layers;j++){
-	memcpy(sector_layers_detail[j],input2_sector_layers_detail[j],input2_nb_ladders_layer[j]*sizeof(int));
-      }
-      SECOUT->Fill();
-    }
-  }
-  SECOUT->Write();
 
   /******************** MERGING PATTERN DATA************************/
   //Loop on the events of the first file
-  nb_entries1 = PATT1->GetEntries();
-  nb_entries2 = PATT2->GetEntries();
+  int nb_entries1 = PATT1->GetEntries();
+  int nb_entries2 = PATT2->GetEntries();
 
   if(nb_entries1!=nb_entries2){
     cout<<"The 2 files do not have the same number of events -> CANCELED"<<endl;
@@ -588,116 +223,68 @@ void PatternFinder::mergeFiles(string outputFile, string inputFile1, string inpu
     PATT1->GetEntry(i);
     PATT2->GetEntry(i); 
     
-    event_id = input1_event_id;
-    nb_layers = input1_nb_layers;
+    m_patt_links->clear();
+    m_patt_secid->clear();
+    m_patt_miss->clear();
+    m_trk_pt->clear();
+    m_trk_eta->clear();
+    m_trk_phi->clear();
+    m_trk_z->clear();
+    m_trk_links->clear();
+    m_trk_secid->clear();
 
-    if(input2_event_id!=event_id){
+    event_id = event_id_1;
+
+    if(event_id_2!=event_id){
       cout<<"Cannot find event "<<event_id<<" in file "<<inputFile2<<" -> DROP EVENT"<<endl;
       break;
     }
-    
-    memset(pattern_sector_id,0,MAX_NB_OUTPUT_PATTERNS*sizeof(int));
-    memset(pattern_pt,0,MAX_NB_OUTPUT_PATTERNS*sizeof(float));
-    
-    nb_patterns = input1_nb_patterns+input2_nb_patterns;
 
-    if(nb_patterns>MAX_NB_OUTPUT_PATTERNS){
-      cout<<"Too many output patterns ("<<nb_patterns<<")"<<endl;
-      nb_patterns=MAX_NB_OUTPUT_PATTERNS;
-      int oldValue = input2_nb_patterns;
-      input2_nb_patterns=MAX_NB_OUTPUT_PATTERNS-input1_nb_patterns;
-      cout<<"The number of patterns from the second file is truncated from "<<oldValue<<" to "<<input2_nb_patterns<<endl;
+    m_patt = m_patt_1 + m_patt_2;
+    m_patt_secid->insert(m_patt_secid->begin(),m_patt_secid_1->begin(),m_patt_secid_1->end());
+    m_patt_secid->insert(m_patt_secid->end(),m_patt_secid_2->begin(),m_patt_secid_2->end());
+    m_patt_miss->insert(m_patt_miss->begin(),m_patt_miss_1->begin(),m_patt_miss_1->end());
+    m_patt_miss->insert(m_patt_miss->end(),m_patt_miss_2->begin(),m_patt_miss_2->end());
+    for(unsigned int j=0;j<m_patt_links_1->size();j++){
+      vector<int> stub_vector;
+      for(unsigned int k=0;k<m_patt_links_1->at(j).size();k++){
+	stub_vector.push_back(m_patt_links_1->at(j)[k]);
+      }
+      m_patt_links->push_back(stub_vector);
+    }
+    for(unsigned int j=0;j<m_patt_links_2->size();j++){
+      vector<int> stub_vector;
+      for(unsigned int k=0;k<m_patt_links_2->at(j).size();k++){
+	stub_vector.push_back(m_patt_links_2->at(j)[k]);
+      }
+      m_patt_links->push_back(stub_vector);
     }
 
-    ori_nb_stubs = input1_ori_nb_stubs+input2_ori_nb_stubs;
-    sel_nb_stubs = input1_sel_nb_stubs+input2_sel_nb_stubs;
-
-    memcpy(pattern_sector_id,input1_pattern_sector_id,input1_nb_patterns*sizeof(int));
-    memcpy(pattern_sector_id+input1_nb_patterns,input2_pattern_sector_id,input2_nb_patterns*sizeof(int));
-
-    memcpy(pattern_pt,input1_pattern_pt,input1_nb_patterns*sizeof(float));
-    memcpy(pattern_pt+input1_nb_patterns,input2_pattern_pt,input2_nb_patterns*sizeof(float));
-
-    for(int j=0;j<nb_layers;j++){
-      memcpy(superStrips[j],input1_superStrips[j],input1_nb_patterns*sizeof(int));
-      memcpy(superStrips[j]+input1_nb_patterns,input2_superStrips[j],input2_nb_patterns*sizeof(int));
+    nb_tracks = nb_tracks_1 + nb_tracks_2;
+    m_trk_secid->insert(m_trk_secid->begin(),m_trk_secid_1->begin(),m_trk_secid_1->end());
+    m_trk_secid->insert(m_trk_secid->end(),m_trk_secid_2->begin(),m_trk_secid_2->end());
+    m_trk_pt->insert(m_trk_pt->begin(),m_trk_pt_1->begin(),m_trk_pt_1->end());
+    m_trk_pt->insert(m_trk_pt->end(),m_trk_pt_2->begin(),m_trk_pt_2->end());
+    m_trk_eta->insert(m_trk_eta->begin(),m_trk_eta_1->begin(),m_trk_eta_1->end());
+    m_trk_eta->insert(m_trk_eta->end(),m_trk_eta_2->begin(),m_trk_eta_2->end());
+    m_trk_phi->insert(m_trk_phi->begin(),m_trk_phi_1->begin(),m_trk_phi_1->end());
+    m_trk_phi->insert(m_trk_phi->end(),m_trk_phi_2->begin(),m_trk_phi_2->end());
+    m_trk_z->insert(m_trk_z->begin(),m_trk_z_1->begin(),m_trk_z_1->end());
+    m_trk_z->insert(m_trk_z->end(),m_trk_z_2->begin(),m_trk_z_2->end());
+    for(unsigned int j=0;j<m_trk_links_1->size();j++){
+      vector<int> stub_vector;
+      for(unsigned int k=0;k<m_trk_links_1->at(j).size();k++){
+	stub_vector.push_back(m_trk_links_1->at(j)[k]);
+      }
+      m_trk_links->push_back(stub_vector);
     }
-    
-    memcpy(nbHitPerPattern,input1_nbHitPerPattern,input1_nb_patterns*sizeof(int));
-    memcpy(nbHitPerPattern+input1_nb_patterns,input2_nbHitPerPattern,input2_nb_patterns*sizeof(int));
-
-    totalNbHits=input1_totalNbHits+input2_totalNbHits;
-    
-    nbTracks=input1_nbTracks+input2_nbTracks;
-
-    memcpy(track_pt,input1_track_pt,input1_nbTracks*sizeof(float));
-    memcpy(track_pt+input1_nbTracks,input2_track_pt,input2_nbTracks*sizeof(float));
-
-    memcpy(track_phi,input1_track_phi,input1_nbTracks*sizeof(float));
-    memcpy(track_phi+input1_nbTracks,input2_track_phi,input2_nbTracks*sizeof(float));
-
-    memcpy(track_d0,input1_track_d0,input1_nbTracks*sizeof(float));
-    memcpy(track_d0+input1_nbTracks,input2_track_d0,input2_nbTracks*sizeof(float));
-
-    memcpy(track_eta,input1_track_eta,input1_nbTracks*sizeof(float));
-    memcpy(track_eta+input1_nbTracks,input2_track_eta,input2_nbTracks*sizeof(float));
-
-    memcpy(track_z0,input1_track_z0,input1_nbTracks*sizeof(float));
-    memcpy(track_z0+input1_nbTracks,input2_track_z0,input2_nbTracks*sizeof(float));
-
-    memcpy(hit_layer,input1_hit_layer,input1_totalNbHits*sizeof(short));
-    memcpy(hit_layer+input1_totalNbHits,input2_hit_layer,input2_totalNbHits*sizeof(short));
-
-    memcpy(hit_ladder,input1_hit_ladder,input1_totalNbHits*sizeof(short));
-    memcpy(hit_ladder+input1_totalNbHits,input2_hit_ladder,input2_totalNbHits*sizeof(short));
-
-    memcpy(hit_zPos,input1_hit_zPos,input1_totalNbHits*sizeof(short));
-    memcpy(hit_zPos+input1_totalNbHits,input2_hit_zPos,input2_totalNbHits*sizeof(short));
-
-    memcpy(hit_segment,input1_hit_segment,input1_totalNbHits*sizeof(short));
-    memcpy(hit_segment+input1_totalNbHits,input2_hit_segment,input2_totalNbHits*sizeof(short));
-
-    memcpy(hit_strip,input1_hit_strip,input1_totalNbHits*sizeof(short));
-    memcpy(hit_strip+input1_totalNbHits,input2_hit_strip,input2_totalNbHits*sizeof(short));
-
-    memcpy(hit_tp,input1_hit_tp,input1_totalNbHits*sizeof(int));
-    memcpy(hit_tp+input1_totalNbHits,input2_hit_tp,input2_totalNbHits*sizeof(int));
-
-    memcpy(hit_idx,input1_hit_idx,input1_totalNbHits*sizeof(int));
-    memcpy(hit_idx+input1_totalNbHits,input2_hit_idx,input2_totalNbHits*sizeof(int));
-
-    memcpy(hit_ptGEN,input1_hit_ptGEN,input1_totalNbHits*sizeof(float));
-    memcpy(hit_ptGEN+input1_totalNbHits,input2_hit_ptGEN,input2_totalNbHits*sizeof(float));
-
-    memcpy(hit_etaGEN,input1_hit_etaGEN,input1_totalNbHits*sizeof(float));
-    memcpy(hit_etaGEN+input1_totalNbHits,input2_hit_etaGEN,input2_totalNbHits*sizeof(float));
-
-    memcpy(hit_phi0GEN,input1_hit_phi0GEN,input1_totalNbHits*sizeof(float));
-    memcpy(hit_phi0GEN+input1_totalNbHits,input2_hit_phi0GEN,input2_totalNbHits*sizeof(float));
-
-    memcpy(hit_ip,input1_hit_ip,input1_totalNbHits*sizeof(float));
-    memcpy(hit_ip+input1_totalNbHits,input2_hit_ip,input2_totalNbHits*sizeof(float));
-
-    memcpy(hit_x,input1_hit_x,input1_totalNbHits*sizeof(float));
-    memcpy(hit_x+input1_totalNbHits,input2_hit_x,input2_totalNbHits*sizeof(float));
-
-    memcpy(hit_y,input1_hit_y,input1_totalNbHits*sizeof(float));
-    memcpy(hit_y+input1_totalNbHits,input2_hit_y,input2_totalNbHits*sizeof(float));
-
-    memcpy(hit_z,input1_hit_z,input1_totalNbHits*sizeof(float));
-    memcpy(hit_z+input1_totalNbHits,input2_hit_z,input2_totalNbHits*sizeof(float));
-
-    memcpy(hit_X0,input1_hit_X0,input1_totalNbHits*sizeof(float));
-    memcpy(hit_X0+input1_totalNbHits,input2_hit_X0,input2_totalNbHits*sizeof(float));
-
-    memcpy(hit_Y0,input1_hit_Y0,input1_totalNbHits*sizeof(float));
-    memcpy(hit_Y0+input1_totalNbHits,input2_hit_Y0,input2_totalNbHits*sizeof(float));
-
-    memcpy(hit_Z0,input1_hit_Z0,input1_totalNbHits*sizeof(float));
-    memcpy(hit_Z0+input1_totalNbHits,input2_hit_Z0,input2_totalNbHits*sizeof(float));
-
-    memcpy(hit_bend,input1_hit_bend,input1_totalNbHits*sizeof(float));
-    memcpy(hit_bend+input1_totalNbHits,input2_hit_bend,input2_totalNbHits*sizeof(float));
+    for(unsigned int j=0;j<m_trk_links_2->size();j++){
+      vector<int> stub_vector;
+      for(unsigned int k=0;k<m_trk_links_2->at(j).size();k++){
+	stub_vector.push_back(m_trk_links_2->at(j)[k]);
+      }
+      m_trk_links->push_back(stub_vector);
+    }
     
     PATTOUT->Fill();
 
@@ -707,317 +294,74 @@ void PatternFinder::mergeFiles(string outputFile, string inputFile1, string inpu
 
   t->Close();
 
-  delete [] input1_superStrip_layer_0;
-  delete [] input1_superStrip_layer_1;
-  delete [] input1_superStrip_layer_2;
-  delete [] input1_superStrip_layer_3;
-  delete [] input1_superStrip_layer_4;
-  delete [] input1_superStrip_layer_5;
-  delete [] input1_superStrip_layer_6;
-  delete [] input1_superStrip_layer_7;
-  delete [] input1_superStrip_layer_8;
-  delete [] input1_pattern_sector_id;
-  delete [] input1_pattern_pt;
-
-  delete [] input1_nbHitPerPattern;
-  delete [] input1_track_pt;
-  delete [] input1_track_phi;
-  delete [] input1_track_d0;
-  delete [] input1_track_eta;
-  delete [] input1_track_z0;
-  delete [] input1_hit_layer;
-  delete [] input1_hit_ladder;
-  delete [] input1_hit_zPos;
-  delete [] input1_hit_segment;
-  delete [] input1_hit_strip;
-  delete [] input1_hit_tp;
-  delete [] input1_hit_idx;
-  delete [] input1_hit_ptGEN;
-  delete [] input1_hit_etaGEN;
-  delete [] input1_hit_phi0GEN;
-  delete [] input1_hit_ip;
-  delete [] input1_hit_x;
-  delete [] input1_hit_y;
-  delete [] input1_hit_z;
-  delete [] input1_hit_X0;
-  delete [] input1_hit_Y0;
-  delete [] input1_hit_Z0;
-  delete [] input1_hit_bend;
-
-  delete [] input2_superStrip_layer_0;
-  delete [] input2_superStrip_layer_1;
-  delete [] input2_superStrip_layer_2;
-  delete [] input2_superStrip_layer_3;
-  delete [] input2_superStrip_layer_4;
-  delete [] input2_superStrip_layer_5;
-  delete [] input2_superStrip_layer_6;
-  delete [] input2_superStrip_layer_7;
-  delete [] input2_superStrip_layer_8;
-  delete [] input2_pattern_sector_id;
-  delete [] input2_pattern_pt;
-
-  delete [] input2_nbHitPerPattern;
-  delete [] input2_track_pt;
-  delete [] input2_track_phi;
-  delete [] input2_track_d0;
-  delete [] input2_track_eta;
-  delete [] input2_track_z0;
-  delete [] input2_hit_layer;
-  delete [] input2_hit_ladder;
-  delete [] input2_hit_zPos;
-  delete [] input2_hit_segment;
-  delete [] input2_hit_strip;
-  delete [] input2_hit_tp;
-  delete [] input2_hit_idx;
-  delete [] input2_hit_ptGEN;
-  delete [] input2_hit_etaGEN;
-  delete [] input2_hit_phi0GEN;
-  delete [] input2_hit_ip;
-  delete [] input2_hit_x;
-  delete [] input2_hit_y;
-  delete [] input2_hit_z;
-  delete [] input2_hit_X0;
-  delete [] input2_hit_Y0;
-  delete [] input2_hit_Z0;
-  delete [] input2_hit_bend;
-
-  delete [] superStrip_layer_0;
-  delete [] superStrip_layer_1;
-  delete [] superStrip_layer_2;
-  delete [] superStrip_layer_3;
-  delete [] superStrip_layer_4;
-  delete [] superStrip_layer_5;
-  delete [] superStrip_layer_6;
-  delete [] superStrip_layer_7;
-  delete [] superStrip_layer_8;
-  delete [] pattern_sector_id;
-  delete [] pattern_pt;
-  delete [] track_pt;
-  delete [] track_phi;
-  delete [] track_d0;
-  delete [] track_eta;
-  delete [] track_z0;
-  delete [] nbHitPerPattern;
-  delete [] hit_layer;
-  delete [] hit_ladder;
-  delete [] hit_zPos;
-  delete [] hit_segment;
-  delete [] hit_strip;
-  delete [] hit_tp;
-  delete [] hit_idx;
-  delete [] hit_ptGEN;
-  delete [] hit_etaGEN;
-  delete [] hit_phi0GEN;
-  delete [] hit_ip;
-  delete [] hit_x;
-  delete [] hit_y;
-  delete [] hit_z;
-  delete [] hit_X0;
-  delete [] hit_Y0;
-  delete [] hit_Z0;
-  delete [] hit_bend;
-
   delete PATT1;
   delete PATT2;
-  delete SEC1;
-  delete SEC2;
   delete PATTOUT;
-  delete SECOUT;
+  delete t;
+  delete m_patt_links_1;
+  delete m_patt_secid_1;
+  delete m_patt_miss_1;
+  delete m_trk_pt_1;
+  delete m_trk_eta_1;
+  delete m_trk_phi_1;
+  delete m_trk_z_1;
+  delete m_trk_links_1;
+  delete m_trk_secid_1;
+
+  delete m_patt_links_2;
+  delete m_patt_secid_2;
+  delete m_patt_miss_2;
+  delete m_trk_pt_2;
+  delete m_trk_eta_2;
+  delete m_trk_phi_2;
+  delete m_trk_z_2;
+  delete m_trk_links_2;
+  delete m_trk_secid_2;
+
+  delete m_patt_links;
+  delete m_patt_secid;
+  delete m_patt_miss;
+  delete m_trk_pt;
+  delete m_trk_eta;
+  delete m_trk_phi;
+  delete m_trk_z;
+  delete m_trk_links;
+  delete m_trk_secid;
+
+  ///////COPY EXISTING DATA TO OUTPUT FILE
+  TFile *oldFile = TFile::Open(inputFile1.c_str());
+  t = new TFile(outputFile.c_str(),"update");
+
+  TTree *old_mc_tree = (TTree*)oldFile->Get("MC");
+  old_mc_tree->SetBranchStatus("*",1);
+  TTree *new_mc_tree = old_mc_tree->CloneTree();
+  new_mc_tree->AutoSave();
+  delete new_mc_tree;
+  delete old_mc_tree;
+
+  TTree *old_tkstubs_tree = (TTree*)oldFile->Get("TkStubs");
+  old_tkstubs_tree->SetBranchStatus("*",1);
+  TTree *new_tkstubs_tree = old_tkstubs_tree->CloneTree();
+  new_tkstubs_tree->AutoSave();
+  delete new_tkstubs_tree;
+  delete old_tkstubs_tree;
+
+  delete oldFile;
+  t->Close();
+  delete t;
+  ////////////////////////////////////////
 
 }
 
 void PatternFinder::find(int start, int& stop){
-  /**************** OUTPUT FILE ****************/
-  TTree* Out = new TTree("Patterns", "Active patterns");
-  TTree* SectorOut = new TTree("Sectors", "Used Sectors");
-  TFile *t = new TFile(outputFileName.c_str(),"recreate");
 
-  const int MAX_NB_PATTERNS = 1500;
-  const int MAX_NB_HITS = 100;
-  const int MAX_NB_LADDERS_PER_LAYER = 16;
-  const int MAX_NB_LAYERS = 9;
-
-  int nb_layers;
-  int nb_patterns=0;
-  int ori_nb_stubs=0;
-  int sel_nb_stubs=0;
-  int nb_tracks=0;
-  int event_id;
-  int superStrip_layer_0[MAX_NB_PATTERNS];
-  int superStrip_layer_1[MAX_NB_PATTERNS];
-  int superStrip_layer_2[MAX_NB_PATTERNS];
-  int superStrip_layer_3[MAX_NB_PATTERNS];
-  int superStrip_layer_4[MAX_NB_PATTERNS];
-  int superStrip_layer_5[MAX_NB_PATTERNS];
-  int superStrip_layer_6[MAX_NB_PATTERNS];
-  int superStrip_layer_7[MAX_NB_PATTERNS];
-  int superStrip_layer_8[MAX_NB_PATTERNS];
-  float pattern_pt[MAX_NB_PATTERNS];
-  int pattern_sector_id[MAX_NB_PATTERNS];
-
-  //Array containing the strips arrays
-  int* superStrips[MAX_NB_LAYERS];
-  superStrips[0]=superStrip_layer_0;
-  superStrips[1]=superStrip_layer_1;
-  superStrips[2]=superStrip_layer_2;
-  superStrips[3]=superStrip_layer_3;
-  superStrips[4]=superStrip_layer_4;
-  superStrips[5]=superStrip_layer_5;
-  superStrips[6]=superStrip_layer_6;
-  superStrips[7]=superStrip_layer_7;
-  superStrips[8]=superStrip_layer_8;
-
-  int sector_id=0;
-  int sector_layers=0;
-  int nb_ladders_layer[MAX_NB_LAYERS];
-  int sector_layer_list[MAX_NB_LAYERS];
-  int sector_layer_0[MAX_NB_LADDERS_PER_LAYER];
-  int sector_layer_1[MAX_NB_LADDERS_PER_LAYER];
-  int sector_layer_2[MAX_NB_LADDERS_PER_LAYER];
-  int sector_layer_3[MAX_NB_LADDERS_PER_LAYER];
-  int sector_layer_4[MAX_NB_LADDERS_PER_LAYER];
-  int sector_layer_5[MAX_NB_LADDERS_PER_LAYER];
-  int sector_layer_6[MAX_NB_LADDERS_PER_LAYER];
-  int sector_layer_7[MAX_NB_LADDERS_PER_LAYER];
-  int sector_layer_8[MAX_NB_LADDERS_PER_LAYER];
-
-  int* sector_layers_detail[MAX_NB_LAYERS];
-  sector_layers_detail[0]=sector_layer_0;
-  sector_layers_detail[1]=sector_layer_1;
-  sector_layers_detail[2]=sector_layer_2;
-  sector_layers_detail[3]=sector_layer_3;
-  sector_layers_detail[4]=sector_layer_4;
-  sector_layers_detail[5]=sector_layer_5;
-  sector_layers_detail[6]=sector_layer_6;
-  sector_layers_detail[7]=sector_layer_7;
-  sector_layers_detail[8]=sector_layer_8;
-
-  int nbHitPerPattern[MAX_NB_PATTERNS];
-
-  float* track_pt = new float[MAX_NB_PATTERNS];
-  float* track_phi = new float[MAX_NB_PATTERNS];
-  float* track_d0 = new float[MAX_NB_PATTERNS];
-  float* track_eta = new float[MAX_NB_PATTERNS];
-  float* track_z0 = new float[MAX_NB_PATTERNS];
-
-  int totalNbHits=0;
-  short* hit_layer = new short[MAX_NB_PATTERNS*MAX_NB_HITS];
-  short* hit_ladder = new short[MAX_NB_PATTERNS*MAX_NB_HITS];
-  short* hit_zPos = new short[MAX_NB_PATTERNS*MAX_NB_HITS];
-  short* hit_segment = new short[MAX_NB_PATTERNS*MAX_NB_HITS];
-  short* hit_strip = new short[MAX_NB_PATTERNS*MAX_NB_HITS];
-  int* hit_tp = new int[MAX_NB_PATTERNS*MAX_NB_HITS];
-  int* hit_idx = new int[MAX_NB_PATTERNS*MAX_NB_HITS];
-  bool* hit_used_fit = new bool[MAX_NB_PATTERNS*MAX_NB_HITS];
-  float* hit_ptGEN = new float[MAX_NB_PATTERNS*MAX_NB_HITS];
-  float* hit_etaGEN = new float[MAX_NB_PATTERNS*MAX_NB_HITS];
-  float* hit_phi0GEN = new float[MAX_NB_PATTERNS*MAX_NB_HITS];
-  float* hit_ip = new float[MAX_NB_PATTERNS*MAX_NB_HITS];
-  float* hit_x = new float[MAX_NB_PATTERNS*MAX_NB_HITS];
-  float* hit_y = new float[MAX_NB_PATTERNS*MAX_NB_HITS];
-  float* hit_z = new float[MAX_NB_PATTERNS*MAX_NB_HITS];
-  float* hit_x0 = new float[MAX_NB_PATTERNS*MAX_NB_HITS];
-  float* hit_y0 = new float[MAX_NB_PATTERNS*MAX_NB_HITS];
-  float* hit_z0 = new float[MAX_NB_PATTERNS*MAX_NB_HITS];
-  float* hit_bend = new float[MAX_NB_PATTERNS*MAX_NB_HITS];
-  
-  SectorOut->Branch("sectorID",            &sector_id);
-  SectorOut->Branch("nbLayers",            &sector_layers);
-  SectorOut->Branch("layer",                  sector_layer_list, "layer[nbLayers]/I");
-  SectorOut->Branch("nb_ladders_layer",       nb_ladders_layer, "nb_ladders_layer[nbLayers]/I");
-  SectorOut->Branch("sectorLadders_layer_0",  sector_layer_0, "sectorLadders_layer_0[16]/I");
-  SectorOut->Branch("sectorLadders_layer_1",  sector_layer_1, "sectorLadders_layer_1[16]/I");
-  SectorOut->Branch("sectorLadders_layer_2",  sector_layer_2, "sectorLadders_layer_2[16]/I");
-  SectorOut->Branch("sectorLadders_layer_3",  sector_layer_3, "sectorLadders_layer_3[16]/I");
-  SectorOut->Branch("sectorLadders_layer_4",  sector_layer_4, "sectorLadders_layer_4[16]/I");
-  SectorOut->Branch("sectorLadders_layer_5",  sector_layer_5, "sectorLadders_layer_5[16]/I");
-  SectorOut->Branch("sectorLadders_layer_6",  sector_layer_6, "sectorLadders_layer_6[16]/I");
-  SectorOut->Branch("sectorLadders_layer_7",  sector_layer_7, "sectorLadders_layer_7[16]/I");
-  SectorOut->Branch("sectorLadders_layer_8",  sector_layer_8, "sectorLadders_layer_8[16]/I");
-
-  Out->Branch("nbLayers",            &nb_layers);
-  Out->Branch("nbPatterns",          &nb_patterns);
-  Out->Branch("nbStubsInEvt",        &ori_nb_stubs);
-  Out->Branch("nbStubsInPat",        &sel_nb_stubs);
-
-  Out->Branch("nbTracks",            &nb_tracks);
-
-  Out->Branch("eventID",             &event_id);
-  Out->Branch("sectorID",            pattern_sector_id, "sectorID[nbPatterns]/I");
-  Out->Branch("patternPT",           pattern_pt, "patternPT[nbPatterns]/F");
-  Out->Branch("superStrip0",         superStrip_layer_0, "superStrip0[nbPatterns]/I");
-  Out->Branch("superStrip1",         superStrip_layer_1, "superStrip1[nbPatterns]/I");
-  Out->Branch("superStrip2",         superStrip_layer_2, "superStrip2[nbPatterns]/I");
-  Out->Branch("superStrip3",         superStrip_layer_3, "superStrip3[nbPatterns]/I");
-  Out->Branch("superStrip4",         superStrip_layer_4, "superStrip4[nbPatterns]/I");
-  Out->Branch("superStrip5",         superStrip_layer_5, "superStrip5[nbPatterns]/I");
-  Out->Branch("superStrip6",         superStrip_layer_6, "superStrip6[nbPatterns]/I");
-  Out->Branch("superStrip7",         superStrip_layer_7, "superStrip7[nbPatterns]/I");
-  Out->Branch("superStrip8",         superStrip_layer_8, "superStrip8[nbPatterns]/I");
-  Out->Branch("nbStubs",             nbHitPerPattern, "nbStubs[nbPatterns]/I");
-
-  Out->Branch("track_pt",             track_pt, "track_pt[nbTracks]/F");
-  Out->Branch("track_phi",            track_phi, "track_phi[nbTracks]/F");
-  Out->Branch("track_d0",             track_d0, "track_d0[nbTracks]/F");
-  Out->Branch("track_eta",            track_eta, "track_eta[nbTracks]/F");
-  Out->Branch("track_z0",             track_z0, "track_z0[nbTracks]/F");
-
-  Out->Branch("total_nb_stubs",      &totalNbHits, "total_nb_stubs/I");
-  Out->Branch("stub_layers",         hit_layer,"stub_layers[total_nb_stubs]/S");
-  Out->Branch("stub_ladders",        hit_ladder, "stub_ladders[total_nb_stubs]/S");
-  Out->Branch("stub_module",         hit_zPos, "stub_module[total_nb_stubs]/S");
-  Out->Branch("stub_segment",        hit_segment, "stub_segment[total_nb_stubs]/S");
-  Out->Branch("stub_strip",          hit_strip, "stub_strip[total_nb_stubs]/S");
-  Out->Branch("stub_tp",             hit_tp,    "stub_tp[total_nb_stubs]/I");
-  Out->Branch("stub_idx",            hit_idx,    "stub_idx[total_nb_stubs]/I");
-  Out->Branch("stub_used_fit",       hit_used_fit,"stub_used_fit[total_nb_stubs]/O");
-  Out->Branch("stub_ptGEN",          hit_ptGEN, "stub_ptGEN[total_nb_stubs]/F");
-  Out->Branch("stub_etaGEN",         hit_etaGEN, "stub_etaGEN[total_nb_stubs]/F");
-  Out->Branch("stub_phi0GEN",        hit_phi0GEN, "stub_phi0GEN[total_nb_stubs]/F");
-  Out->Branch("stub_IP",             hit_ip, "stub_IP[total_nb_stubs]/F");
-  Out->Branch("stub_x",              hit_x, "stub_x[total_nb_stubs]/F");
-  Out->Branch("stub_y",              hit_y, "stub_y[total_nb_stubs]/F");
-  Out->Branch("stub_z",              hit_z, "stub_z[total_nb_stubs]/F");
-  Out->Branch("stub_X0",             hit_x0, "stub_X0[total_nb_stubs]/F");
-  Out->Branch("stub_Y0",             hit_y0, "stub_Y0[total_nb_stubs]/F");
-  Out->Branch("stub_Z0",             hit_z0, "stub_Z0[total_nb_stubs]/F");
-  Out->Branch("stub_bend",           hit_bend, "stub_bend[total_nb_stubs]/F");
-  
-
-  /*********************************************/
-
-  /******************* SAVING SECTORS **************/
-  map<string,int> sectors_ids;
-  map<string, Sector*> sectors_map;
-  vector<Sector*> all_sectors = sectors->getAllSectors();
-  for(unsigned int i=0;i<all_sectors.size();i++){
-    Sector* tmpSec = all_sectors[i];
-    sector_id=tmpSec->getOfficialID();
-    if(sector_id==-1)
-      sector_id=tmpSec->getKey();
-    sector_layers = tmpSec->getNbLayers();
-    for(int j=0;j<sector_layers;j++){
-      vector<int> sec_l = tmpSec->getLadders(j);
-      sector_layer_list[j] = tmpSec->getLayerID(j);
-      nb_ladders_layer[j] = sec_l.size();
-      for(unsigned int l=0;l<sec_l.size();l++){
-	sector_layers_detail[j][l]=sec_l[l];
-      }
-
-    }
-    cout<<tmpSec->getIDString()<<" -> "<<sector_id<<endl;
-    sectors_ids[tmpSec->getIDString()]=sector_id;
-    sectors_map[tmpSec->getIDString()]=tmpSec;
-    SectorOut->Fill();
-  }
-  SectorOut->Write();
-  delete SectorOut;
-
-  /*************************************************/
+  //used to generate the root dictionnary to support vector<vector<int>> and vector<float>
+  gROOT->ProcessLine(".L Loader.C+");
 
   /***************** INPUT FILE ****************/
-  TChain* TT = new TChain("L1TrackTrigger");
-  TT->Add(eventsFilename.c_str());
+  TFile* rootFile = new TFile(eventsFilename.c_str(),"update");
+  rootFile->Delete("L1tracks;*");
+  TTree* TT = (TTree*)rootFile->Get("TkStubs");
   
   int               n_evt;
 
@@ -1060,27 +404,68 @@ void PatternFinder::find(int start, int& stop){
   vector<float>         *p_m_stub_z =      &m_stub_z;
 
 
-  TT->SetBranchAddress("evt",            &n_evt);
-  TT->SetBranchAddress("STUB_n",         &m_stub);
-  TT->SetBranchAddress("STUB_layer",     &p_m_stub_layer);
-  TT->SetBranchAddress("STUB_module",    &p_m_stub_module);
-  TT->SetBranchAddress("STUB_ladder",    &p_m_stub_ladder);
-  TT->SetBranchAddress("STUB_seg",       &p_m_stub_seg);
-  TT->SetBranchAddress("STUB_strip",     &p_m_stub_strip);
-  TT->SetBranchAddress("STUB_tp",        &p_m_stub_tp);
-  TT->SetBranchAddress("STUB_X0",        &p_m_stub_x0);
-  TT->SetBranchAddress("STUB_Y0",        &p_m_stub_y0);
-  TT->SetBranchAddress("STUB_Z0",        &p_m_stub_z0);
-  TT->SetBranchAddress("STUB_PHI0",      &p_m_stub_phi0);
-  TT->SetBranchAddress("STUB_etaGEN",    &p_m_stub_etaGEN);
-  TT->SetBranchAddress("STUB_pxGEN",     &p_m_stub_pxGEN);
-  TT->SetBranchAddress("STUB_pyGEN",     &p_m_stub_pyGEN);
-  TT->SetBranchAddress("STUB_deltas",    &p_m_stub_deltas);
-  TT->SetBranchAddress("STUB_x",         &p_m_stub_x);
-  TT->SetBranchAddress("STUB_y",         &p_m_stub_y);
-  TT->SetBranchAddress("STUB_z",         &p_m_stub_z);
+  TT->SetBranchAddress("L1Tkevt",            &n_evt);
+  TT->SetBranchAddress("L1TkSTUB_n",         &m_stub);
+  TT->SetBranchAddress("L1TkSTUB_layer",     &p_m_stub_layer);
+  TT->SetBranchAddress("L1TkSTUB_module",    &p_m_stub_module);
+  TT->SetBranchAddress("L1TkSTUB_ladder",    &p_m_stub_ladder);
+  TT->SetBranchAddress("L1TkSTUB_seg",       &p_m_stub_seg);
+  TT->SetBranchAddress("L1TkSTUB_strip",     &p_m_stub_strip);
+  TT->SetBranchAddress("L1TkSTUB_tp",        &p_m_stub_tp);
+  TT->SetBranchAddress("L1TkSTUB_X0",        &p_m_stub_x0);
+  TT->SetBranchAddress("L1TkSTUB_Y0",        &p_m_stub_y0);
+  TT->SetBranchAddress("L1TkSTUB_Z0",        &p_m_stub_z0);
+  TT->SetBranchAddress("L1TkSTUB_PHI0",      &p_m_stub_phi0);
+  TT->SetBranchAddress("L1TkSTUB_etaGEN",    &p_m_stub_etaGEN);
+  TT->SetBranchAddress("L1TkSTUB_pxGEN",     &p_m_stub_pxGEN);
+  TT->SetBranchAddress("L1TkSTUB_pyGEN",     &p_m_stub_pyGEN);
+  TT->SetBranchAddress("L1TkSTUB_deltas",    &p_m_stub_deltas);
+  TT->SetBranchAddress("L1TkSTUB_x",         &p_m_stub_x);
+  TT->SetBranchAddress("L1TkSTUB_y",         &p_m_stub_y);
+  TT->SetBranchAddress("L1TkSTUB_z",         &p_m_stub_z);
 
   /*******************************************************/
+
+  /**************** OUTPUT FILE ****************/
+  //TFile *t = new TFile(outputFileName.c_str(),"recreate");
+  TTree* Out = new TTree("L1tracks", "Official L1-AM tracks info");
+
+  // Tree definition ////////////////////
+  int event_id;
+  int m_patt=0;
+  std::vector< std::vector<int> > *m_patt_links   = new  std::vector< std::vector<int> >;
+  std::vector<int> *m_patt_secid   = new  std::vector<int>;
+  std::vector<int> *m_patt_miss    = new  std::vector<int>;
+  
+  int nb_tracks=0;
+  std::vector<float> *m_trk_pt       = new  std::vector<float>;
+  std::vector<float> *m_trk_eta      = new  std::vector<float>;
+  std::vector<float> *m_trk_phi      = new  std::vector<float>;
+  std::vector<float> *m_trk_z        = new  std::vector<float>;
+  std::vector< std::vector<int> > *m_trk_links    = new  std::vector< std::vector<int> >;
+  std::vector<int> *m_trk_secid    = new  std::vector<int>;
+  /////////////////////////////////////////
+
+  Sector* sector = sectors->getAllSectors()[0];
+  int sector_id = sector->getOfficialID();
+
+  // Branches definition
+
+  Out->Branch("L1evt", &event_id); // Simple evt number or event ID
+  
+  Out->Branch("L1PATT_n",           &m_patt);
+  Out->Branch("L1PATT_links",       &m_patt_links);
+  Out->Branch("L1PATT_secid",       &m_patt_secid);
+  Out->Branch("L1PATT_nmiss",       &m_patt_miss);
+  
+  Out->Branch("L1TRK_n",            &nb_tracks);
+  Out->Branch("L1TRK_links",        &m_trk_links);
+  Out->Branch("L1TRK_secid",        &m_trk_secid);
+  Out->Branch("L1TRK_pt",           &m_trk_pt);
+  Out->Branch("L1TRK_phi",          &m_trk_phi);
+  Out->Branch("L1TRK_z",            &m_trk_z);
+  Out->Branch("L1TRK_eta",          &m_trk_eta);
+
 
   int n_entries_TT = TT->GetEntries();
   int num_evt = start;
@@ -1092,7 +477,17 @@ void PatternFinder::find(int start, int& stop){
   while(num_evt<n_entries_TT && num_evt<=stop){
     TT->GetEntry(num_evt);
 
-    cout<<"Event "<<n_evt<<endl;
+    cout<<"Event "<<n_evt<<" (index "<<num_evt<<")"<<endl;
+
+    m_patt_links->clear();
+    m_patt_secid->clear();
+    m_patt_miss->clear();
+    m_trk_pt->clear();
+    m_trk_eta->clear();
+    m_trk_phi->clear();
+    m_trk_z->clear();
+    m_trk_links->clear();
+    m_trk_secid->clear();
 
     vector<Hit*> hits;
 
@@ -1104,12 +499,7 @@ void PatternFinder::find(int start, int& stop){
 	continue;
       int ladder = CMSPatternLayer::getLadderCode(layer, m_stub_ladder[i]);
       int segment =  CMSPatternLayer::getSegmentCode(layer, ladder, m_stub_seg[i]);
-      /*
-      if(segment<0 || segment>1){
-	cout<<"Invalid segment on event "<<n_evt<<endl;
-	continue;
-      }
-      */
+
       int strip = m_stub_strip[i];
       int tp = m_stub_tp[i];
       float eta = m_stub_eta_gen[i];
@@ -1138,43 +528,15 @@ void PatternFinder::find(int start, int& stop){
     vector<Sector*> pattern_list = find(hits);
 
     //Traitement des patterns actif : enregistrement, affichage...
-    nb_layers = tracker.getNbLayers();
-    event_id=num_evt;//we use the index in the file as event_id (most of our input files do not have a valid event_id)
-    nb_patterns = 0;
-    ori_nb_stubs = (int)hits.size();
-    
-    nb_tracks = 0;
-    for(int i=0;i<nb_layers;i++){
-      memset(superStrips[i],0,MAX_NB_PATTERNS*sizeof(int));
-    }
-    memset(hit_layer,0,MAX_NB_PATTERNS*MAX_NB_HITS*sizeof(short));
-    memset(hit_ladder,0,MAX_NB_PATTERNS*MAX_NB_HITS*sizeof(short));
-    memset(hit_tp,0,MAX_NB_PATTERNS*MAX_NB_HITS*sizeof(int));
-    memset(hit_idx,0,MAX_NB_PATTERNS*MAX_NB_HITS*sizeof(int));
-    memset(hit_used_fit,false,MAX_NB_PATTERNS*MAX_NB_HITS*sizeof(bool));
-    memset(hit_ptGEN,0,MAX_NB_PATTERNS*MAX_NB_HITS*sizeof(float));
-    memset(hit_etaGEN,0,MAX_NB_PATTERNS*MAX_NB_HITS*sizeof(float));
-    memset(hit_phi0GEN,0,MAX_NB_PATTERNS*MAX_NB_HITS*sizeof(float));
-    memset(hit_ip,0,MAX_NB_PATTERNS*MAX_NB_HITS*sizeof(float));
-    memset(hit_x,0,MAX_NB_PATTERNS*MAX_NB_HITS*sizeof(float));
-    memset(hit_y,0,MAX_NB_PATTERNS*MAX_NB_HITS*sizeof(float));
-    memset(hit_z,0,MAX_NB_PATTERNS*MAX_NB_HITS*sizeof(float));
-    memset(hit_x0,0,MAX_NB_PATTERNS*MAX_NB_HITS*sizeof(float));
-    memset(hit_y0,0,MAX_NB_PATTERNS*MAX_NB_HITS*sizeof(float));
-    memset(hit_z0,0,MAX_NB_PATTERNS*MAX_NB_HITS*sizeof(float));
-    memset(hit_bend,0,MAX_NB_PATTERNS*MAX_NB_HITS*sizeof(float));
+    event_id=n_evt;
 
-    int patternIndex=0;
-    int trackIndex=0;
-    int stubIndex = 0;
-    totalNbHits = 0;
     // loop on sectors
     for(unsigned int i=0;i<pattern_list.size();i++){
       vector<GradedPattern*> pl = pattern_list[i]->getPatternTree()->getLDPatterns();
       vector<Track*> tracks;
 
       /////////FITTER////
-      TrackFitter* fitter = (sectors_map[pattern_list[i]->getIDString()])->getFitter();
+      TrackFitter* fitter = sector->getFitter();
       if(fitter!=NULL){
 	fitter->setSectorID(pattern_list[i]->getOfficialID());
 	for(unsigned int l=0;l<pl.size();l++){
@@ -1191,102 +553,42 @@ void PatternFinder::find(int start, int& stop){
       }
       ///////////////////////
 
-      nb_patterns+=(int)pl.size();
-      nb_tracks+=(int)tracks.size();
-      int sec_id = sectors_ids[pattern_list[i]->getIDString()];
-      nbHitPerPattern[patternIndex]=0;
-      //loop on the patterns
-      unsigned int max_patterns = pl.size();
-      unsigned int max_tracks = tracks.size();
-      if((int)max_patterns>MAX_NB_PATTERNS){
-	max_patterns=MAX_NB_PATTERNS;
-	nb_patterns=MAX_NB_PATTERNS;
-	cout<<"WARNING : Too may patterns in event "<<n_evt<<" : "<<pl.size()<<" -> keep only the first "<<MAX_NB_PATTERNS<<"."<<endl;
-      }
-      if((int)max_tracks>MAX_NB_PATTERNS){
-	max_tracks=MAX_NB_PATTERNS;
-	cout<<"WARNING : Too may tracks in event "<<n_evt<<" : "<<tracks.size()<<" -> keep only the first "<<MAX_NB_PATTERNS<<"."<<endl;
-      }
-
-      set<int> stub_ids;
-
-      set<int> indexOfStubsInTracks;
-
-      for(unsigned int k=0;k<tracks.size();k++){
-	if(k<max_tracks){
-	  track_pt[trackIndex] = tracks[k]->getCurve();
-	  track_phi[trackIndex]= tracks[k]->getPhi0();
-	  track_d0[trackIndex] = tracks[k]->getD0();
-	  track_eta[trackIndex]= tracks[k]->getEta0();
-	  track_z0[trackIndex] = tracks[k]->getZ0();
-	  
-	  vector<int> stubsInTrack = tracks[k]->getStubs();
-	  for(unsigned int l=0;l<stubsInTrack.size();l++){
-	    indexOfStubsInTracks.insert(stubsInTrack[l]);
-	  }
-	  trackIndex++;
-	}
-	delete tracks[k];
-      }
+      //loop over patterns
       
+      set<int> stub_layers;
+      m_patt = (int)pl.size();
       for(unsigned int j=0;j<pl.size();j++){
-	if(j<max_patterns){
-	  //loop on layers
-	  //cout<<*pl[j]<<endl;
-	  for(int k=0;k<nb_layers;k++){
-	    int sstripValue = pl[j]->getLayerStrip(k)->getIntValue();
-	    superStrips[k][patternIndex]=sstripValue;
-	  }
-	  //sector of the pattern
-	  pattern_sector_id[patternIndex]=sec_id;
-
-	  //Average PT of the pattern
-	  pattern_pt[patternIndex]=pl[j]->getAveragePt();
-	  	  
-	  //stubs of the patterns
-	  vector<Hit*> active_hits = pl[j]->getHits();
-	  
-	  int nbHits = active_hits.size();
-	  if(nbHits>MAX_NB_HITS) // if we have too many hits, we keep only the MAX_NB_HITS first
-	    nbHits=MAX_NB_HITS;
-	  nbHitPerPattern[patternIndex]=nbHits;
-	  totalNbHits+=nbHits;
-	  for(int k=0;k<nbHits;k++){
-	    //cout<<*active_hits[k]<<endl;
-	    
-	    hit_layer[stubIndex]=active_hits[k]->getLayer();
-	    hit_ladder[stubIndex]=active_hits[k]->getLadder();
-	    hit_zPos[stubIndex]=active_hits[k]->getModule();
-	    hit_segment[stubIndex]=active_hits[k]->getSegment();
-	    hit_strip[stubIndex]=active_hits[k]->getStripNumber();
-	    hit_tp[stubIndex]=active_hits[k]->getParticuleID();
-	    hit_idx[stubIndex]=active_hits[k]->getID();
-	    if(indexOfStubsInTracks.find(active_hits[k]->getID())!=indexOfStubsInTracks.end()){
-	      hit_used_fit[stubIndex]=true;
-	    }
-	    hit_ptGEN[stubIndex]=active_hits[k]->getParticulePT();
-	    hit_etaGEN[stubIndex]=active_hits[k]->getParticuleETA();
-	    hit_phi0GEN[stubIndex]=active_hits[k]->getParticulePHI0();
-	    hit_ip[stubIndex]=active_hits[k]->getParticuleIP();
-	    hit_x[stubIndex]=active_hits[k]->getX();
-	    hit_y[stubIndex]=active_hits[k]->getY();
-	    hit_z[stubIndex]=active_hits[k]->getZ();
-	    hit_x0[stubIndex]=active_hits[k]->getX0();
-	    hit_y0[stubIndex]=active_hits[k]->getY0();
-	    hit_z0[stubIndex]=active_hits[k]->getZ0();
-	    hit_bend[stubIndex]=active_hits[k]->getBend();
-	    
-	    stub_ids.insert(active_hits[k]->getID());
-	    
-	    stubIndex++;
-	  }
-	  
-	  patternIndex++;
+	//sector of the pattern
+	m_patt_secid->push_back(sector_id);
+	//cout<<pl[j]->getOrderInChip()<<endl;
+	//stubs of the patterns
+	vector<Hit*> active_hits = pl[j]->getHits();
+	vector<int> stub_index;
+	stub_layers.clear();
+	for(unsigned k=0;k<active_hits.size();k++){
+	  stub_layers.insert(active_hits[k]->getLayer());
+	  stub_index.push_back(active_hits[k]->getID());
 	}
+	m_patt_links->push_back(stub_index);
+	m_patt_miss->push_back(stub_layers.size());
+	
 	delete pl[j];
       }
 
-      sel_nb_stubs = stub_ids.size();
+      // loop over tracks
+      nb_tracks = (int)tracks.size();
+      for(unsigned int k=0;k<tracks.size();k++){
+	m_trk_pt->push_back(tracks[k]->getCurve());
+	m_trk_phi->push_back(tracks[k]->getPhi0());
+	m_trk_eta->push_back(tracks[k]->getEta0());
+	m_trk_z->push_back(tracks[k]->getZ0());
+	
+	vector<int> stubsInTrack = tracks[k]->getStubs();
+	m_trk_links->push_back(stubsInTrack);
+	m_trk_secid->push_back(sector_id);
+
+	delete tracks[k];
+      }
 
     }
     Out->Fill();
@@ -1302,37 +604,25 @@ void PatternFinder::find(int start, int& stop){
     num_evt++;
   }
   //Out->Print();
+
   Out->Write();
-  t->Close();
-  delete Out;
-  delete t;
 
   delete TT;
+  delete Out;
 
-  delete[] track_pt;
-  delete[] track_phi;
-  delete[] track_d0;
-  delete[] track_eta;
-  delete[] track_z0;
-  delete[] hit_layer;
-  delete[] hit_ladder;
-  delete[] hit_zPos;
-  delete[] hit_segment;
-  delete[] hit_strip;
-  delete[] hit_tp;
-  delete[]  hit_idx;
-  delete[]  hit_used_fit;
-  delete[]  hit_ptGEN;
-  delete[]  hit_etaGEN;
-  delete[]  hit_phi0GEN;
-  delete[]  hit_ip;
-  delete[]  hit_x;
-  delete[]  hit_y;
-  delete[]  hit_z;
-  delete[]  hit_x0;
-  delete[]  hit_y0;
-  delete[] hit_z0;
-  delete[] hit_bend;
+  rootFile->Close();
+  delete rootFile;
+
+  delete m_patt_links;
+  delete m_patt_secid;
+  delete m_patt_miss;
+
+  delete m_trk_pt;
+  delete m_trk_eta;
+  delete m_trk_phi;
+  delete m_trk_z;
+  delete m_trk_links;
+  delete m_trk_secid;  
 }
 
 #ifdef IPNL_USE_CUDA
@@ -1527,7 +817,7 @@ void PatternFinder::findCuda(int start, int& stop, deviceStubs* d_stubs){
 
   /***************** INPUT FILE ****************/
 
-  TChain* TT = new TChain("L1TrackTrigger");
+  TChain* TT = new TChain("TkStubs");
   TT->Add(eventsFilename.c_str());
   
   int               n_evt;
@@ -1569,24 +859,24 @@ void PatternFinder::findCuda(int start, int& stop, deviceStubs* d_stubs){
   vector<float>         *p_m_stub_z =      &m_stub_z;
 
 
-  TT->SetBranchAddress("evt",            &n_evt);
-  TT->SetBranchAddress("STUB_n",         &m_stub);
-  TT->SetBranchAddress("STUB_layer",     &p_m_stub_layer);
-  TT->SetBranchAddress("STUB_module",    &p_m_stub_module);
-  TT->SetBranchAddress("STUB_ladder",    &p_m_stub_ladder);
-  TT->SetBranchAddress("STUB_seg",       &p_m_stub_seg);
-  TT->SetBranchAddress("STUB_strip",     &p_m_stub_strip);
-  TT->SetBranchAddress("STUB_tp",        &p_m_stub_tp);
-  TT->SetBranchAddress("STUB_X0",        &p_m_stub_x0);
-  TT->SetBranchAddress("STUB_Y0",        &p_m_stub_y0);
-  TT->SetBranchAddress("STUB_Z0",        &p_m_stub_z0);
-  TT->SetBranchAddress("STUB_PHI0",      &p_m_stub_phi0);
-  TT->SetBranchAddress("STUB_etaGEN",    &p_m_stub_etaGEN);
-  TT->SetBranchAddress("STUB_pxGEN",     &p_m_stub_pxGEN);
-  TT->SetBranchAddress("STUB_pyGEN",     &p_m_stub_pyGEN);
-  TT->SetBranchAddress("STUB_x",         &p_m_stub_x);
-  TT->SetBranchAddress("STUB_y",         &p_m_stub_y);
-  TT->SetBranchAddress("STUB_z",         &p_m_stub_z);
+  TT->SetBranchAddress("L1Tkevt",            &n_evt);
+  TT->SetBranchAddress("L1TkSTUB_n",         &m_stub);
+  TT->SetBranchAddress("L1TkSTUB_layer",     &p_m_stub_layer);
+  TT->SetBranchAddress("L1TkSTUB_module",    &p_m_stub_module);
+  TT->SetBranchAddress("L1TkSTUB_ladder",    &p_m_stub_ladder);
+  TT->SetBranchAddress("L1TkSTUB_seg",       &p_m_stub_seg);
+  TT->SetBranchAddress("L1TkSTUB_strip",     &p_m_stub_strip);
+  TT->SetBranchAddress("L1TkSTUB_tp",        &p_m_stub_tp);
+  TT->SetBranchAddress("L1TkSTUB_X0",        &p_m_stub_x0);
+  TT->SetBranchAddress("L1TkSTUB_Y0",        &p_m_stub_y0);
+  TT->SetBranchAddress("L1TkSTUB_Z0",        &p_m_stub_z0);
+  TT->SetBranchAddress("L1TkSTUB_PHI0",      &p_m_stub_phi0);
+  TT->SetBranchAddress("L1TkSTUB_etaGEN",    &p_m_stub_etaGEN);
+  TT->SetBranchAddress("L1TkSTUB_pxGEN",     &p_m_stub_pxGEN);
+  TT->SetBranchAddress("L1TkSTUB_pyGEN",     &p_m_stub_pyGEN);
+  TT->SetBranchAddress("L1TkSTUB_x",         &p_m_stub_x);
+  TT->SetBranchAddress("L1TkSTUB_y",         &p_m_stub_y);
+  TT->SetBranchAddress("L1TkSTUB_z",         &p_m_stub_z);
 
   /*******************************************************/
 
@@ -1646,7 +936,7 @@ void PatternFinder::findCuda(int start, int& stop, deviceStubs* d_stubs){
 	cuda_hits[cuda_idx+1]=ladder;
 	cuda_hits[cuda_idx+2]=module;
 	cuda_hits[cuda_idx+3]=segment;
-	cuda_hits[cuda_idx+4]=(char)(strip/sectors->getSuperStripSize(layer));
+	//cuda_hits[cuda_idx+4]=(char)(strip/sectors->getSuperStripSize(layer));
 	cuda_nb_hits++;
 
       }

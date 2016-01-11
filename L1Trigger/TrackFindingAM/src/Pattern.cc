@@ -6,6 +6,7 @@ Pattern::Pattern(int nb){
   nb_strips=NULL;
   nbFakeSSKnown=false;
   nbFakeSS=0;
+  order_in_chip = -1;
   for(int i=0;i<nb_layer;i++){
     layer_strips.push_back(NULL);
   }
@@ -17,6 +18,7 @@ Pattern::Pattern(){
   nb_strips=NULL;
   nbFakeSSKnown=false;
   nbFakeSS=0;
+  order_in_chip = -1;
   for(int i=0;i<nb_layer;i++){
     layer_strips.push_back(NULL);
   }
@@ -28,6 +30,7 @@ Pattern::Pattern(const Pattern& p){
   strips = NULL;
   nbFakeSSKnown=false;
   nbFakeSS=0;
+  order_in_chip = p.order_in_chip;
 
   if(p.strips!=NULL){
     nb_strips=new char[nb_layer];
@@ -231,6 +234,7 @@ bool Pattern::contains(Pattern* hdp){
 }
 
 ostream& operator<<(ostream& out, const Pattern& s){
+  out<<s.getOrderInChip()<<" : ";
   for(int i=0;i<s.getNbLayers();i++){
     out<<s.layer_strips[i]->toString()<<" - ";
   }
@@ -252,4 +256,12 @@ int Pattern::getNbFakeSuperstrips(){
     nbFakeSS=score;
     return score;
   }
+}
+
+void Pattern::setOrderInChip(int i){
+  order_in_chip = i;
+}
+
+int Pattern::getOrderInChip() const{
+  return order_in_chip;
 }

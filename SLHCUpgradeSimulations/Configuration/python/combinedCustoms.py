@@ -8,7 +8,7 @@ from SLHCUpgradeSimulations.Configuration.phase2TkCustomsBE5DPixel10DLHCCCooling
 from SLHCUpgradeSimulations.Configuration.phase2TkCustomsBE5DPixel10DLHCCNoDefect import customise as customiseBE5DPixel10DLHCCNoDefect
 from SLHCUpgradeSimulations.Configuration.phase2TkCustomsBE5DPixel10DCoolingDefect import customise as customiseBE5DPixel10DCoolingDefect
 from SLHCUpgradeSimulations.Configuration.phase2TkCustomsBE5DPixel10DDefect import customise as customiseBE5DPixel10DDefect
-from SLHCUpgradeSimulations.Configuration.phase2TkCustomsBE5DPixel10Ddev import customise as customiseBE5DPixel10Ddev
+from SLHCUpgradeSimulations.Configuration.phase2TkTilted import customise as customiseTiltedTK
 
 from SLHCUpgradeSimulations.Configuration.phase2TkCustomsBE import l1EventContent as customise_ev_BE
 from SLHCUpgradeSimulations.Configuration.phase2TkCustomsBE5D import l1EventContent as customise_ev_BE5D
@@ -699,9 +699,9 @@ def cust_2023MuonNoExtPix(process):
     process=jetCustoms.customise_jets(process)
     return process
 
-def cust_2023Muondev(process):
+def cust_2023TiltedTK(process):
     process=customisePostLS1(process)
-    process=customiseBE5DPixel10Ddev(process)
+    process=customiseTiltedTK(process)
     process=customise_HcalPhase2(process)
     process=customise_ev_BE5DPixel10D(process)
     process=customise_gem2023(process)
@@ -742,6 +742,12 @@ def cust_2023TTI_forHLT(process):
     process=l1EventContent_TTI_forHLT(process)
     return process
 
+def cust_removeTTI(process):
+    """ Removes L1TrackTrigger_step from the schedule for geometries that
+    don't yet work with it. """
+    if hasattr(process,'L1TrackTrigger_step'):
+        process.schedule.remove( process.L1TrackTrigger_step )
+    return process
 
 def noCrossing(process):
     process=customise_NoCrossing(process)
@@ -858,48 +864,68 @@ def fastsimDefault(process):
 def fastsimPhase2(process):
     return fastCustomisePhase2(process)
 
-def bsStudyStep1(process):
-    process.VtxSmeared.MaxZ = 11.0
-    process.VtxSmeared.MinZ = -11.0
+def bsStudy(process,length):
+    if hasattr(process,"VtxSmeared") :
+        try:
+            process.VtxSmeared.MaxZ = length
+            process.VtxSmeared.MinZ = -length
+        except TypeError as error:
+            raise TypeError( str(error)+". Are you using '--beamspot Flat'? This customisation only works the Flat beamspot." )
+
+    if hasattr(process,"initialStepSeeds") :
+        process.initialStepSeeds.RegionFactoryPSet.RegionPSet = cms.PSet(
+            precise = cms.bool(True),
+            originRadius = cms.double(0.02),
+            originHalfLength = cms.double(length),#nSigmaZ = cms.double(4.0),
+            beamSpot = cms.InputTag("offlineBeamSpot"),
+            ptMin = cms.double(0.7)
+            )
+    if hasattr(process,"highPtTripletStepSeeds") :
+        process.highPtTripletStepSeeds.RegionFactoryPSet.RegionPSet = cms.PSet(
+            precise = cms.bool(True),
+            originRadius = cms.double(0.02),
+            originHalfLength = cms.double(length),#nSigmaZ = cms.double(4.0),
+            beamSpot = cms.InputTag("offlineBeamSpot"),
+            ptMin = cms.double(0.7)
+            )
+    if hasattr(process,"lowPtQuadStepSeeds") :
+        process.lowPtQuadStepSeeds.RegionFactoryPSet.RegionPSet = cms.PSet(
+            precise = cms.bool(True),
+            originRadius = cms.double(0.02),
+            originHalfLength = cms.double(length),#nSigmaZ = cms.double(4.0),
+            beamSpot = cms.InputTag("offlineBeamSpot"),
+            ptMin = cms.double(0.2)
+            )
+    if hasattr(process,"lowPtTripletStepSeeds") :
+        process.lowPtTripletStepSeeds.RegionFactoryPSet.RegionPSet = cms.PSet(
+            precise = cms.bool(True),
+            originRadius = cms.double(0.015),
+            originHalfLength = cms.double(length),#nSigmaZ = cms.double(4.0),
+            beamSpot = cms.InputTag("offlineBeamSpot"),
+            ptMin = cms.double(0.35)
+            )
+    if hasattr(process,"detachedQuadStepSeeds") :
+        process.detachedQuadStepSeeds.RegionFactoryPSet.RegionPSet = cms.PSet(
+            precise = cms.bool(True),
+            originRadius = cms.double(0.5),
+            originHalfLength = cms.double(length),#nSigmaZ = cms.double(4.0),
+            beamSpot = cms.InputTag("offlineBeamSpot"),
+            ptMin = cms.double(0.3)
+            )
     return process
 
-def bsStudyStep2(process):
-    process.initialStepSeeds.RegionFactoryPSet.RegionPSet = cms.PSet(
-        precise = cms.bool(True),
-        originRadius = cms.double(0.02),
-        originHalfLength = cms.double(11.0),#nSigmaZ = cms.double(4.0),
-        beamSpot = cms.InputTag("offlineBeamSpot"),
-        ptMin = cms.double(0.7)
-        )
-    process.highPtTripletStepSeeds.RegionFactoryPSet.RegionPSet = cms.PSet(
-        precise = cms.bool(True),
-        originRadius = cms.double(0.02),
-        originHalfLength = cms.double(11.0),#nSigmaZ = cms.double(4.0),
-        beamSpot = cms.InputTag("offlineBeamSpot"),
-        ptMin = cms.double(0.7)
-        )
-    process.lowPtQuadStepSeeds.RegionFactoryPSet.RegionPSet = cms.PSet(
-        precise = cms.bool(True),
-        originRadius = cms.double(0.02),
-        originHalfLength = cms.double(11.0),#nSigmaZ = cms.double(4.0),
-        beamSpot = cms.InputTag("offlineBeamSpot"),
-        ptMin = cms.double(0.2)
-        )
-    process.lowPtTripletStepSeeds.RegionFactoryPSet.RegionPSet = cms.PSet(
-        precise = cms.bool(True),
-        originRadius = cms.double(0.015),
-        originHalfLength = cms.double(11.0),#nSigmaZ = cms.double(4.0),
-        beamSpot = cms.InputTag("offlineBeamSpot"),
-        ptMin = cms.double(0.35)
-        )
-    process.detachedQuadStepSeeds.RegionFactoryPSet.RegionPSet = cms.PSet(
-        precise = cms.bool(True),
-        originRadius = cms.double(0.5),
-        originHalfLength = cms.double(11.0),#nSigmaZ = cms.double(4.0),
-        beamSpot = cms.InputTag("offlineBeamSpot"),
-        ptMin = cms.double(0.3)
-        )
+def customise_bsStudy_11(process):
+    process=bsStudy(process,11.0)
     return process
+    
+def customise_bsStudy_15(process):
+    process=bsStudy(process,15.0)
+    return process
+    
+def customise_bsStudy_20(process):
+    process=bsStudy(process,20.0)
+    return process
+
 
 def customise_noPixelDataloss(process):
     return cNoPixDataloss(process)

@@ -4,7 +4,7 @@ from SLHCUpgradeSimulations.Configuration.phase2TkCustomsBE import customise as 
 from SLHCUpgradeSimulations.Configuration.phase2TkCustomsBE5D import customise as customiseBE5D
 from SLHCUpgradeSimulations.Configuration.phase2TkCustomsBE5DPixel10D import customise as customiseBE5DPixel10D
 from SLHCUpgradeSimulations.Configuration.phase2TkCustomsBE5DPixel10DLHCC import customise as customiseBE5DPixel10DLHCC
-from SLHCUpgradeSimulations.Configuration.phase2TkCustomsBE5DPixel10Ddev import customise as customiseBE5DPixel10Ddev
+from SLHCUpgradeSimulations.Configuration.phase2TkTilted import customise as customiseTiltedTK
 
 from SLHCUpgradeSimulations.Configuration.phase2TkCustomsBE import l1EventContent as customise_ev_BE
 from SLHCUpgradeSimulations.Configuration.phase2TkCustomsBE5D import l1EventContent as customise_ev_BE5D
@@ -349,5 +349,100 @@ def cust_2023HGCalNoExtPix_ee18_fh9(process):
     process = customise_me0(process)
     if hasattr(process,'reconstruction_step'):
         process = propagate_layerdropping(process,layer_mask)
-    
+    return process
+
+def cust_hgcalTime_common(process):
+    if hasattr(process,'g4SimHits'):
+        process.g4SimHits.HGCSD.TimeSliceUnit = cms.double(1e-3) # 1ps in ns
+    return process
+
+def cust_hgcalPerfectTime(process):
+    cust_hgcalTime_common(process)
+    if hasattr(process,'digitisation_step'):
+        process.mix.digitizers.hgceeDigitizer.digiCfg.feCfg.tdcResolutionInPs = cms.double( 0.001 )
+        process.mix.digitizers.hgchefrontDigitizer.digiCfg.feCfg.tdcResolutionInPs = cms.double( 0.001 )
+    return process
+
+#default of 50ps time resolution
+def cust_hgcalTime(process):
+    cust_hgcalTime_common(process)
+    if hasattr(process,'digitisation_step'):
+        process.mix.digitizers.hgceeDigitizer.digiCfg.feCfg.tdcResolutionInPs = cms.double( 50.0 )
+        process.mix.digitizers.hgchefrontDigitizer.digiCfg.feCfg.tdcResolutionInPs = cms.double( 50.0 )
+    return process
+
+def cust_2023HGCalPandoraMuonFastTime(process):
+    process = cust_2023HGCalPandora_common(process)
+    process = cust_ecalTime(process)
+    process = cust_hgcalTime(process)
+    if hasattr(process,'RECOSIMEventContent'):
+        process.RECOSIMEventContent.outputCommands.append('keep *_mix_MergedTrackTruth_*')
+        process.RECOSIMEventContent.outputCommands.append('keep *_mix_InitialVertices_*')
+        process.RECOSIMEventContent.outputCommands.append('keep *_trackTimeValueMapProducer_*_*')
+    if hasattr(process,'FEVTDEBUGEventContent'):
+        process.FEVTDEBUGEventContent.outputCommands.append('keep *_mix_MergedTrackTruth_*')
+        process.FEVTDEBUGEventContent.outputCommands.append('keep *_mix_InitialVertices_*')
+        process.FEVTDEBUGEventContent.outputCommands.append('keep *_trackTimeValueMapProducer_*_*')
+    if hasattr(process,'FEVTDEBUGHLTEventContent'):
+        process.FEVTDEBUGHLTEventContent.outputCommands.append('keep *_mix_MergedTrackTruth_*')
+        process.FEVTDEBUGHLTEventContent.outputCommands.append('keep *_mix_InitialVertices_*')
+        process.FEVTDEBUGHLTEventContent.outputCommands.append('keep *_trackTimeValueMapProducer_*_*')
+    if hasattr(process,'digitisation_step'):
+        process.mix.digitizers.mergedtruth.createInitialVertexCollection = True
+    if hasattr(process,'reconstruction_step'):
+        process.load("SimTracker.TrackAssociation.quickTrackAssociatorByHits_cfi")
+        process.load("RecoParticleFlow.FastTiming.trackTimeValueMapProducer_cfi")
+        process.particleFlowReco = cms.Sequence(process.trackTimeValueMapProducer+process.particleFlowReco)
+        process.RandomNumberGeneratorService.trackTimeValueMapProducer = cms.PSet(
+            initialSeed = cms.untracked.uint32(1234), engineName = cms.untracked.string('TRandom3')
+            )
+        process.ecalDetailedTimeRecHit.correctForVertexZPosition=False
+    # This next part limits the pileup to be in time only, as
+    # requested by the fast timing group
+    if hasattr(process,'mix'):
+        process.mix.minBunch = 0
+        process.mix.maxBunch = 0
+        if hasattr(process.mix.digitizers,'mergedtruth'):
+            process.mix.digitizers.mergedtruth.select.signalOnlyTP = cms.bool(False)
+            process.mix.digitizers.mergedtruth.maximumPreviousBunchCrossing = cms.uint32(5)
+            process.mix.digitizers.mergedtruth.maximumSubsequentBunchCrossing = cms.uint32(9999)
+            process.mix.digitizers.mergedtruth.createInitialVertexCollection = cms.bool(True)
+    return process
+
+def cust_2023HGCalPandoraMuonPerfectFastTime(process):
+    process = cust_2023HGCalPandora_common(process)
+    process = cust_ecalTime(process)
+    process = cust_hgcalPerfectTime(process)
+    if hasattr(process,'RECOSIMEventContent'):
+        process.RECOSIMEventContent.outputCommands.append('keep *_mix_MergedTrackTruth_*')
+        process.RECOSIMEventContent.outputCommands.append('keep *_mix_InitialVertices_*')
+        process.RECOSIMEventContent.outputCommands.append('keep *_trackTimeValueMapProducer_*_*')
+    if hasattr(process,'FEVTDEBUGEventContent'):
+        process.FEVTDEBUGEventContent.outputCommands.append('keep *_mix_MergedTrackTruth_*')
+        process.FEVTDEBUGEventContent.outputCommands.append('keep *_mix_InitialVertices_*')
+        process.FEVTDEBUGEventContent.outputCommands.append('keep *_trackTimeValueMapProducer_*_*')
+    if hasattr(process,'FEVTDEBUGHLTEventContent'):
+        process.FEVTDEBUGHLTEventContent.outputCommands.append('keep *_mix_MergedTrackTruth_*')
+        process.FEVTDEBUGHLTEventContent.outputCommands.append('keep *_mix_InitialVertices_*')
+        process.FEVTDEBUGHLTEventContent.outputCommands.append('keep *_trackTimeValueMapProducer_*_*')
+    if hasattr(process,'digitisation_step'):
+        process.mix.digitizers.mergedtruth.createInitialVertexCollection = True
+    if hasattr(process,'reconstruction_step'):
+        process.load("SimTracker.TrackAssociation.quickTrackAssociatorByHits_cfi")
+        process.load("RecoParticleFlow.FastTiming.trackTimeValueMapProducer_cfi")
+        process.particleFlowReco = cms.Sequence(process.trackTimeValueMapProducer+process.particleFlowReco)        
+        process.RandomNumberGeneratorService.trackTimeValueMapProducer = cms.PSet(
+            initialSeed = cms.untracked.uint32(1234), engineName = cms.untracked.string('TRandom3')
+            )
+        process.ecalDetailedTimeRecHit.correctForVertexZPosition=False
+    # This next part limits the pileup to be in time only, as
+    # requested by the fast timing group
+    if hasattr(process,'mix'):
+        process.mix.minBunch = 0
+        process.mix.maxBunch = 0
+        if hasattr(process.mix.digitizers,'mergedtruth'):
+            process.mix.digitizers.mergedtruth.select.signalOnlyTP = cms.bool(False)
+            process.mix.digitizers.mergedtruth.maximumPreviousBunchCrossing = cms.uint32(5)
+            process.mix.digitizers.mergedtruth.maximumSubsequentBunchCrossing = cms.uint32(9999)
+            process.mix.digitizers.mergedtruth.createInitialVertexCollection = cms.bool(True)
     return process

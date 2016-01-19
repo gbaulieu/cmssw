@@ -99,11 +99,6 @@ class PatternFinder{
   vector<Sector*> find(vector<Hit*> hits);
 
   /**
-     \brief Merge 2 files into 1 single file
-  **/
-  static void mergeFiles(string outputFile, string inputFile1, string inputFile2);
-
-  /**
      \brief Control the output level
      \param m If set to True, all stub's superstrip values will be displayed during the pattern recognition process.
    **/

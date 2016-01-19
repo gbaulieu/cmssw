@@ -85,282 +85,22 @@ void PatternFinder::setEventsFile(string f){
   eventsFilename = f;
 }
 
-void PatternFinder::mergeFiles(string outputFile, string inputFile1, string inputFile2){
-
-  //used to generate the root dictionnary to support vector<vector<int>> and vector<float>
-  gROOT->ProcessLine(".L Loader.C+");
-
-  /*********************INPUT 1 FILE *************************************/
-
-  TChain *PATT1    = new TChain("L1tracks"); // infos about patterns
-  PATT1->Add(inputFile1.c_str());
-
-  // Tree definition ////////////////////
-  int event_id_1;
-  int m_patt_1=0;
-  std::vector< std::vector<int> > *m_patt_links_1   = new  std::vector< std::vector<int> >;
-  std::vector<int> *m_patt_secid_1   = new  std::vector<int>;
-  std::vector<int> *m_patt_miss_1    = new  std::vector<int>;
-  
-  int nb_tracks_1=0;
-  std::vector<float> *m_trk_pt_1       = new  std::vector<float>;
-  std::vector<float> *m_trk_eta_1      = new  std::vector<float>;
-  std::vector<float> *m_trk_phi_1      = new  std::vector<float>;
-  std::vector<float> *m_trk_z_1        = new  std::vector<float>;
-  std::vector< std::vector<int> > *m_trk_links_1    = new  std::vector< std::vector<int> >;
-  std::vector<int> *m_trk_secid_1    = new  std::vector<int>;
-  /////////////////////////////////////////
-
-  // Branches definition
-
-  PATT1->SetBranchAddress("L1evt", &event_id_1); // Simple evt number or event ID
-  
-  PATT1->SetBranchAddress("L1PATT_n",           &m_patt_1);
-  PATT1->SetBranchAddress("L1PATT_links",       &m_patt_links_1);
-  PATT1->SetBranchAddress("L1PATT_secid",       &m_patt_secid_1);
-  PATT1->SetBranchAddress("L1PATT_nmiss",       &m_patt_miss_1);
-  
-  PATT1->SetBranchAddress("L1TRK_n",            &nb_tracks_1);
-  PATT1->SetBranchAddress("L1TRK_links",        &m_trk_links_1);
-  PATT1->SetBranchAddress("L1TRK_secid",        &m_trk_secid_1);
-  PATT1->SetBranchAddress("L1TRK_pt",           &m_trk_pt_1);
-  PATT1->SetBranchAddress("L1TRK_phi",          &m_trk_phi_1);
-  PATT1->SetBranchAddress("L1TRK_z",            &m_trk_z_1);
-  PATT1->SetBranchAddress("L1TRK_eta",          &m_trk_eta_1);
-
-  /*********************************************/
-  /*********************INPUT 2 FILE *************************************/
-
-  TChain *PATT2    = new TChain("L1tracks"); // infos about patterns
-  PATT2->Add(inputFile2.c_str());
-
-  // Tree definition ////////////////////
-  int event_id_2;
-  int m_patt_2=0;
-  std::vector< std::vector<int> > *m_patt_links_2   = new  std::vector< std::vector<int> >;
-  std::vector<int> *m_patt_secid_2   = new  std::vector<int>;
-  std::vector<int> *m_patt_miss_2    = new  std::vector<int>;
-  
-  int nb_tracks_2=0;
-  std::vector<float> *m_trk_pt_2       = new  std::vector<float>;
-  std::vector<float> *m_trk_eta_2      = new  std::vector<float>;
-  std::vector<float> *m_trk_phi_2      = new  std::vector<float>;
-  std::vector<float> *m_trk_z_2        = new  std::vector<float>;
-  std::vector< std::vector<int> > *m_trk_links_2    = new  std::vector< std::vector<int> >;
-  std::vector<int> *m_trk_secid_2    = new  std::vector<int>;
-  /////////////////////////////////////////
-
-  // Branches definition
-
-  PATT2->SetBranchAddress("L1evt", &event_id_2); // Simple evt number or event ID
-  
-  PATT2->SetBranchAddress("L1PATT_n",           &m_patt_2);
-  PATT2->SetBranchAddress("L1PATT_links",       &m_patt_links_2);
-  PATT2->SetBranchAddress("L1PATT_secid",       &m_patt_secid_2);
-  PATT2->SetBranchAddress("L1PATT_nmiss",       &m_patt_miss_2);
-  
-  PATT2->SetBranchAddress("L1TRK_n",            &nb_tracks_2);
-  PATT2->SetBranchAddress("L1TRK_links",        &m_trk_links_2);
-  PATT2->SetBranchAddress("L1TRK_secid",        &m_trk_secid_2);
-  PATT2->SetBranchAddress("L1TRK_pt",           &m_trk_pt_2);
-  PATT2->SetBranchAddress("L1TRK_phi",          &m_trk_phi_2);
-  PATT2->SetBranchAddress("L1TRK_z",            &m_trk_z_2);
-  PATT2->SetBranchAddress("L1TRK_eta",          &m_trk_eta_2);
-
-  /*********************************************/
- 
-  /*********************OUTPUT FILE *************************************/
-  TTree *PATTOUT    = new TTree("L1tracks", "Official L1-AM tracks info");
-  TFile *t = new TFile(outputFile.c_str(),"recreate");
-
-  // Tree definition ////////////////////
-  int event_id;
-  int m_patt=0;
-  std::vector< std::vector<int> > *m_patt_links   = new  std::vector< std::vector<int> >;
-  std::vector<int> *m_patt_secid   = new  std::vector<int>;
-  std::vector<int> *m_patt_miss    = new  std::vector<int>;
-  
-  int nb_tracks=0;
-  std::vector<float> *m_trk_pt       = new  std::vector<float>;
-  std::vector<float> *m_trk_eta      = new  std::vector<float>;
-  std::vector<float> *m_trk_phi      = new  std::vector<float>;
-  std::vector<float> *m_trk_z        = new  std::vector<float>;
-  std::vector< std::vector<int> > *m_trk_links    = new  std::vector< std::vector<int> >;
-  std::vector<int> *m_trk_secid    = new  std::vector<int>;
-  /////////////////////////////////////////
-
-  // Branches definition
-
-  PATTOUT->Branch("L1evt", &event_id); // Simple evt number or event ID
-  
-  PATTOUT->Branch("L1PATT_n",           &m_patt);
-  PATTOUT->Branch("L1PATT_links",       &m_patt_links);
-  PATTOUT->Branch("L1PATT_secid",       &m_patt_secid);
-  PATTOUT->Branch("L1PATT_nmiss",       &m_patt_miss);
-  
-  PATTOUT->Branch("L1TRK_n",            &nb_tracks);
-  PATTOUT->Branch("L1TRK_links",        &m_trk_links);
-  PATTOUT->Branch("L1TRK_secid",        &m_trk_secid);
-  PATTOUT->Branch("L1TRK_pt",           &m_trk_pt);
-  PATTOUT->Branch("L1TRK_phi",          &m_trk_phi);
-  PATTOUT->Branch("L1TRK_z",            &m_trk_z);
-  PATTOUT->Branch("L1TRK_eta",          &m_trk_eta);
-
-  /*********************************************/
-
-  /******************** MERGING PATTERN DATA************************/
-  //Loop on the events of the first file
-  int nb_entries1 = PATT1->GetEntries();
-  int nb_entries2 = PATT2->GetEntries();
-
-  if(nb_entries1!=nb_entries2){
-    cout<<"The 2 files do not have the same number of events -> CANCELED"<<endl;
-    return;
-  }
-  
-  for(int i=0;i<nb_entries1;i++){
-    
-    PATT1->GetEntry(i);
-    PATT2->GetEntry(i); 
-    
-    m_patt_links->clear();
-    m_patt_secid->clear();
-    m_patt_miss->clear();
-    m_trk_pt->clear();
-    m_trk_eta->clear();
-    m_trk_phi->clear();
-    m_trk_z->clear();
-    m_trk_links->clear();
-    m_trk_secid->clear();
-
-    event_id = event_id_1;
-
-    if(event_id_2!=event_id){
-      cout<<"Cannot find event "<<event_id<<" in file "<<inputFile2<<" -> DROP EVENT"<<endl;
-      break;
-    }
-
-    m_patt = m_patt_1 + m_patt_2;
-    m_patt_secid->insert(m_patt_secid->begin(),m_patt_secid_1->begin(),m_patt_secid_1->end());
-    m_patt_secid->insert(m_patt_secid->end(),m_patt_secid_2->begin(),m_patt_secid_2->end());
-    m_patt_miss->insert(m_patt_miss->begin(),m_patt_miss_1->begin(),m_patt_miss_1->end());
-    m_patt_miss->insert(m_patt_miss->end(),m_patt_miss_2->begin(),m_patt_miss_2->end());
-    for(unsigned int j=0;j<m_patt_links_1->size();j++){
-      vector<int> stub_vector;
-      for(unsigned int k=0;k<m_patt_links_1->at(j).size();k++){
-	stub_vector.push_back(m_patt_links_1->at(j)[k]);
-      }
-      m_patt_links->push_back(stub_vector);
-    }
-    for(unsigned int j=0;j<m_patt_links_2->size();j++){
-      vector<int> stub_vector;
-      for(unsigned int k=0;k<m_patt_links_2->at(j).size();k++){
-	stub_vector.push_back(m_patt_links_2->at(j)[k]);
-      }
-      m_patt_links->push_back(stub_vector);
-    }
-
-    nb_tracks = nb_tracks_1 + nb_tracks_2;
-    m_trk_secid->insert(m_trk_secid->begin(),m_trk_secid_1->begin(),m_trk_secid_1->end());
-    m_trk_secid->insert(m_trk_secid->end(),m_trk_secid_2->begin(),m_trk_secid_2->end());
-    m_trk_pt->insert(m_trk_pt->begin(),m_trk_pt_1->begin(),m_trk_pt_1->end());
-    m_trk_pt->insert(m_trk_pt->end(),m_trk_pt_2->begin(),m_trk_pt_2->end());
-    m_trk_eta->insert(m_trk_eta->begin(),m_trk_eta_1->begin(),m_trk_eta_1->end());
-    m_trk_eta->insert(m_trk_eta->end(),m_trk_eta_2->begin(),m_trk_eta_2->end());
-    m_trk_phi->insert(m_trk_phi->begin(),m_trk_phi_1->begin(),m_trk_phi_1->end());
-    m_trk_phi->insert(m_trk_phi->end(),m_trk_phi_2->begin(),m_trk_phi_2->end());
-    m_trk_z->insert(m_trk_z->begin(),m_trk_z_1->begin(),m_trk_z_1->end());
-    m_trk_z->insert(m_trk_z->end(),m_trk_z_2->begin(),m_trk_z_2->end());
-    for(unsigned int j=0;j<m_trk_links_1->size();j++){
-      vector<int> stub_vector;
-      for(unsigned int k=0;k<m_trk_links_1->at(j).size();k++){
-	stub_vector.push_back(m_trk_links_1->at(j)[k]);
-      }
-      m_trk_links->push_back(stub_vector);
-    }
-    for(unsigned int j=0;j<m_trk_links_2->size();j++){
-      vector<int> stub_vector;
-      for(unsigned int k=0;k<m_trk_links_2->at(j).size();k++){
-	stub_vector.push_back(m_trk_links_2->at(j)[k]);
-      }
-      m_trk_links->push_back(stub_vector);
-    }
-    
-    PATTOUT->Fill();
-
-  }
-
-  PATTOUT->Write();
-
-  t->Close();
-
-  delete PATT1;
-  delete PATT2;
-  delete PATTOUT;
-  delete t;
-  delete m_patt_links_1;
-  delete m_patt_secid_1;
-  delete m_patt_miss_1;
-  delete m_trk_pt_1;
-  delete m_trk_eta_1;
-  delete m_trk_phi_1;
-  delete m_trk_z_1;
-  delete m_trk_links_1;
-  delete m_trk_secid_1;
-
-  delete m_patt_links_2;
-  delete m_patt_secid_2;
-  delete m_patt_miss_2;
-  delete m_trk_pt_2;
-  delete m_trk_eta_2;
-  delete m_trk_phi_2;
-  delete m_trk_z_2;
-  delete m_trk_links_2;
-  delete m_trk_secid_2;
-
-  delete m_patt_links;
-  delete m_patt_secid;
-  delete m_patt_miss;
-  delete m_trk_pt;
-  delete m_trk_eta;
-  delete m_trk_phi;
-  delete m_trk_z;
-  delete m_trk_links;
-  delete m_trk_secid;
-
-  ///////COPY EXISTING DATA TO OUTPUT FILE
-  TFile *oldFile = TFile::Open(inputFile1.c_str());
-  t = new TFile(outputFile.c_str(),"update");
-
-  TTree *old_mc_tree = (TTree*)oldFile->Get("MC");
-  old_mc_tree->SetBranchStatus("*",1);
-  TTree *new_mc_tree = old_mc_tree->CloneTree();
-  new_mc_tree->AutoSave();
-  delete new_mc_tree;
-  delete old_mc_tree;
-
-  TTree *old_tkstubs_tree = (TTree*)oldFile->Get("TkStubs");
-  old_tkstubs_tree->SetBranchStatus("*",1);
-  TTree *new_tkstubs_tree = old_tkstubs_tree->CloneTree();
-  new_tkstubs_tree->AutoSave();
-  delete new_tkstubs_tree;
-  delete old_tkstubs_tree;
-
-  delete oldFile;
-  t->Close();
-  delete t;
-  ////////////////////////////////////////
-
-}
-
 void PatternFinder::find(int start, int& stop){
 
   //used to generate the root dictionnary to support vector<vector<int>> and vector<float>
   gROOT->ProcessLine(".L Loader.C+");
 
   /***************** INPUT FILE ****************/
+  Sector* sector = sectors->getAllSectors()[0];
+  int sector_id = sector->getOfficialID();
+
   TFile* rootFile = new TFile(eventsFilename.c_str(),"update");
-  rootFile->Delete("L1tracks;*");
+  // If there is already a TTree for this sector, we remove it
+  string tree_name = "L1tracks_sec"+to_string(sector_id);
+  string tree_name_delete = tree_name+";*";
+
+  rootFile->Delete(tree_name_delete.c_str());
+
   TTree* TT = (TTree*)rootFile->Get("TkStubs");
   
   int               n_evt;
@@ -427,8 +167,8 @@ void PatternFinder::find(int start, int& stop){
   /*******************************************************/
 
   /**************** OUTPUT FILE ****************/
-  //TFile *t = new TFile(outputFileName.c_str(),"recreate");
-  TTree* Out = new TTree("L1tracks", "Official L1-AM tracks info");
+
+  TTree* Out = new TTree(tree_name.c_str(), "Official L1-AM tracks info");
 
   // Tree definition ////////////////////
   int event_id;
@@ -445,9 +185,6 @@ void PatternFinder::find(int start, int& stop){
   std::vector< std::vector<int> > *m_trk_links    = new  std::vector< std::vector<int> >;
   std::vector<int> *m_trk_secid    = new  std::vector<int>;
   /////////////////////////////////////////
-
-  Sector* sector = sectors->getAllSectors()[0];
-  int sector_id = sector->getOfficialID();
 
   // Branches definition
 

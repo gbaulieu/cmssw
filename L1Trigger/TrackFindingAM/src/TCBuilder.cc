@@ -793,7 +793,7 @@ void TCBuilder::fit(vector<Hit*> originalHits)
 
   //All the Seeds combinations have been tested
 
-  if (vecBestCandidateHits.empty() == false)
+  if ( (currentSec == SEC_HYBRID && vecBestCandidateHits.size() >= 4) || vecBestCandidateHits.size() >= 5 )
     {
       //If there is a recorded best candidate
 

@@ -234,7 +234,7 @@ string CMSPatternLayer::toStringBinary(){
   return oss.str();
 }
 
-string CMSPatternLayer::toAM05Format(){
+string CMSPatternLayer::toAM05Format(bool tagLayer){
 
   /**
      The input superstrip is 16 bits long
@@ -243,6 +243,13 @@ string CMSPatternLayer::toAM05Format(){
   **/
   int nb_dc_bits = 0;
   int used_dc_bits = getDCBitsNumber();
+
+  if(isFake()){
+    dc_bits[0]=0;
+    dc_bits[1]=0;
+    dc_bits[2]=0;
+  }
+
   if(used_dc_bits<3)
     nb_dc_bits=2;
   else
@@ -293,12 +300,6 @@ string CMSPatternLayer::toAM05Format(){
     else
       dcbit1_val=2;//10
 
-    // in case this is a fake superstrip, it must not be activable : we use the 11 value of the DC bits
-    if(isFake()){
-      dcbit0_val=3;//11
-      dcbit1_val=3;//11
-    }
-
     //4 bits for Z + 1 bit for seg + 4 bits for ladder + 5 bits for sstrip + 2 bits for sstrips DC bit 0 + 2 bits for sstrips DC bit 1 = 18 bits
     am_format |= (z&AM05_MOD_MASK)<<AM05_MOD_START_BIT |
       (ladder&AM05_PHI_MASK)<<AM05_PHI_START_BIT |
@@ -332,12 +333,6 @@ string CMSPatternLayer::toAM05Format(){
       break;
     }
     
-    // in case this is a fake superstrip, it must not be activable : we use the 11 value of the DC bits
-    if(isFake()){
-      dcbit0_val=3;//11
-      dcbit1_val=3;//11
-    }
-
     //4 bits for Z + 1 bit for seg + 4 bits for ladder + 5 bits for sstrip + 2 bits for sstrips DC bit 0 + 2 bits for sstrips DC bit 1 = 18 bits
     am_format |= (z&AM05_MOD_MASK)<<AM05_MOD_START_BIT |
       (ladder&AM05_PHI_MASK)<<AM05_PHI_START_BIT |
@@ -369,12 +364,6 @@ string CMSPatternLayer::toAM05Format(){
     case 1 : dcbit1_val=2;//10
       break;
     }
-
-    // in case this is a fake superstrip, it must not be activable : we use the 11 value of the DC bits
-    if(isFake()){
-      dcbit0_val=3;//11
-      dcbit1_val=3;//11
-    }    
 
     //4 bits for Z + 1 bit for seg + 4 bits for ladder + 5 bits for sstrip + 2 bits for sstrips DC bit 0 + 2 bits for sstrips DC bit 1 = 18 bits
     am_format |= (z&AM05_MOD_MASK)<<AM05_MOD_START_BIT |
@@ -440,13 +429,6 @@ string CMSPatternLayer::toAM05Format(){
       exit(-1);
     }
 
-    // in case this is a fake superstrip, it must not be activable : we use the 11 value of the DC bits
-    if(isFake()){
-      dcbit0_val=3;//11
-      dcbit1_val=3;//11
-      dcbit2_val=3;//11
-    }
-
     //3 bits for Z + 1 bit for seg + 4 bits for ladder + 4 bits for sstrip + 2 bits for sstrips DC bit 0 + 2 bits for sstrips DC bit 1 + 2 bits for sstrips DC bit 2 = 18 bits
     am_format |= (z&AM05_MOD_MASK)<<AM05_MOD_START_BIT |
       (ladder&AM05_PHI_MASK)<<AM05_PHI_START_BIT |
@@ -456,6 +438,14 @@ string CMSPatternLayer::toAM05Format(){
       (dcbit1_val&AM05_STRIP_DC1_MASK)<<AM05_STRIP_DC1_BIT |
       (dcbit2_val&AM05_STRIP_DC2_MASK)<<AM05_STRIP_DC2_BIT;
   }
+
+  if(tagLayer){
+    if(used_dc_bits==3)
+      am_format |= 0x200;
+    else
+      am_format |= 0x100;
+  }
+
   ostringstream oss;
   oss<<hex<<"0x"<<std::setfill ('0') << std::setw (5)<<am_format<<" "<<nb_dc_bits;
   return oss.str();

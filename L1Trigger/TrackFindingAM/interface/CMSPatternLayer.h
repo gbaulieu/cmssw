@@ -125,9 +125,10 @@ class CMSPatternLayer : public PatternLayer{
   string toStringBinary();
   /**
      \brief Returns a string representation of the PatternLayer, using the encoding needed for a AM05 chip
+     \param tagLayer If true, set the bit 6 to 1 (used to distinguish layers in case of 2 layers on 1 bus)
      \return A string describing the PatternLayer
   **/
-  string toAM05Format();
+  string toAM05Format(bool tagLayer=false);
   /**
      \brief Returns the module's Z position
      \return The module's Z position

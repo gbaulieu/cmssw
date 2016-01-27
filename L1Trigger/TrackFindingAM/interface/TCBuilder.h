@@ -10,6 +10,7 @@
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/export.hpp>
 
+enum HW_SIGN_TYPE {UNSIGNED, SIGNED};
 
 enum SEC_TYPE {SEC_BARREL, SEC_HYBRID, SEC_ENDCAP};
 
@@ -40,7 +41,7 @@ class TCBuilder:public TrackFitter{
   double m_tabHybridThresholds[2][3][14][2];  //Hybrid LayMaxSeed1 = 1, LayMaxSeed2 = 2, LayMaxTestStub = 13
   double m_tabEndcapThresholds[4][5][16][2];  //Endcap LayMaxSeed1 = 3, LayMaxSeed2 = 4, LayMaxTestStub = 15
 
-  int m_nFractionnalPartWidth;
+  bool m_bHardwareSimulation;
   int m_nMissingHits;
 
   /**
@@ -50,7 +51,7 @@ class TCBuilder:public TrackFitter{
   void addThresholds(int, int, int, SEC_TYPE, double, double);
   void getThresholds(int, int, int, SEC_TYPE, double[]);
   char transcodeLayer(Hit *);
-  double binning(double, int);
+  double binning(double, int, int, HW_SIGN_TYPE);
   void alignScore(Hit& , Hit& , Hit& , double []);
 
  public:
@@ -73,10 +74,10 @@ class TCBuilder:public TrackFitter{
   Track* createFittedTrack(vector <Hit*>&);
  
   /**
-     \brief Set the fractionnal part width value
-     \param nbFloatingPoint The number of bits used for the decimal part (0 for floating point computing)
+     \brief Configure the way the computing is done
+     \param hardwareEmulation If true the computing will be done using the hardware precision. If false, float computing is used.
    **/
-  void setFractionnalPartWidth(int nbFloatingPoint);
+  void setHardwareEmulation(bool hardwareEmulation);
 
   void fit();
   void fit(vector<Hit*> hits);

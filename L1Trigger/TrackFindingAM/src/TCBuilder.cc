@@ -541,19 +541,19 @@ void TCBuilder::alignScore(Hit& hSeed1, Hit& hSeed2, Hit& hTestStub, double tSco
   PHI2 = binning(atan(Y2/X2), 4, 18, SIGNED);
   PHI3 = binning(atan(Y3/X3), 4, 18, SIGNED);
 
-  RPHI_S1 = binning((PHI2 - PHI1) * (R3 - R2), 10, 20, SIGNED);
-  RPHI_S2 = binning((PHI2 - PHI3) * (R2 - R1), 10, 20, SIGNED);
+  RPHI_S1 = binning((PHI2 - PHI1) * (R3 - R2), 8, 20, SIGNED);
+  RPHI_S2 = binning((PHI2 - PHI3) * (R2 - R1), 8, 20, SIGNED);
 
-  fRPHI_Score = binning(RPHI_S1 + RPHI_S2, 4, 18, SIGNED);
+  fRPHI_Score = binning(fabs(RPHI_S1 + RPHI_S2), 7, 18, UNSIGNED);
 
   //RZ plan
   RZ_S1 = binning((Z2 - Z1) * (R3 - R2), 12, 20, SIGNED);
   RZ_S2 = binning((Z2 - Z3) * (R2 - R1), 12, 20, SIGNED);
 
-  fRZ_Score = binning(RZ_S1 + RZ_S2, 10, 18, SIGNED);
+  fRZ_Score = binning(fabs(RZ_S1 + RZ_S2), 10, 18, UNSIGNED);
 
-  tScores[0] = fabs(fRPHI_Score);
-  tScores[1] = fabs(fRZ_Score);
+  tScores[0] = fRPHI_Score;
+  tScores[1] = fRZ_Score;
 }
 
 

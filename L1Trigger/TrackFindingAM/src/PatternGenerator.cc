@@ -358,7 +358,7 @@ int PatternGenerator::generate(TChain* TT, int* evtIndex, int evtNumber, int* nb
       p->setLayerStrip(j, &pat);
 
       if(getVariableResolutionState()){
-	lowDef_layer.computeSuperstrip(tracker_layers[j], module, ladder, strip, seg, SectorTree::getSuperstripSize(tracker_layers[j],CMSPatternLayer::getLadderCode(tracker_layers[j],ladder_ori))*(int)pow(2.0,(double)variableRes[tracker_layers[j]]), stub_number==-2);
+	lowDef_layer.computeSuperstrip(tracker_layers[j], module, ladder, strip, seg, SectorTree::getSuperstripSize(tracker_layers[j],CMSPatternLayer::getLadderCode(tracker_layers[j],ladder_ori))*(int)pow(2.0,(double)variableRes[tracker_layers[j]]), isPSModule, stub_number==-2);
 	lowDef_p->setLayerStrip(j, &lowDef_layer);
       }
 

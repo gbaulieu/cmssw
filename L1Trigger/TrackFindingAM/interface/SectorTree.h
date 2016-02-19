@@ -133,17 +133,19 @@ class SectorTree{
   /**
      \brief Get the active patterns in each sector
      \param active_threshold The minimum number of hit super strips to activate the pattern
+     \param max_nb_roads The maximum number of output roads : additional roads will be deleted
      \return A vector containing pointers on copies of the sectors, each sectors containing its active patterns
   **/
-  vector<Sector*> getActivePatternsPerSector(int active_threshold);
+  vector<Sector*> getActivePatternsPerSector(int active_threshold, unsigned int max_nb_roads=1000000);
 
   /**
      \brief Get the active patterns in each sector
      \param max_nb_missing_hit The maximum number of non active layers to activate the pattern
      \param active_threshold The minimum number of hit super strips to activate the pattern
+     \param max_nb_roads The maximum number of output roads : additional roads will be deleted
      \return A vector containing pointers on copies of the sectors, each sectors containing its active patterns
   **/
-  vector<Sector*> getActivePatternsPerSectorUsingMissingHit(int max_nb_missing_hit, int active_threshold);
+  vector<Sector*> getActivePatternsPerSectorUsingMissingHit(int max_nb_missing_hit, int active_threshold, unsigned int max_nb_roads=1000000);
 
   /**
      \brief Retrieve the superstrip size used for the patterns inside the SectorTree

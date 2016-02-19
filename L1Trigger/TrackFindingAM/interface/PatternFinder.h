@@ -22,6 +22,7 @@ class PatternFinder{
   int active_threshold;
   int max_nb_missing_hit;
   bool useMissingHits;
+  unsigned int max_road_number;
   SectorTree* sectors;
   string eventsFilename;
   string outputFileName;
@@ -71,6 +72,12 @@ class PatternFinder{
      \param s The SectorTree containing the sectors with their associated patterns
   **/
   void setSectorTree(SectorTree* s);
+
+  /**
+     \brief Set the maximum output road number
+     \param m The number of active roads will be limited to the first m patterns (ordered by popularity)
+  **/
+  void setMaxRoadNumber(unsigned int m);
 
   /**
      \brief Set the name of the root file containing events

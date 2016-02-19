@@ -136,13 +136,19 @@ void SectorTree::linkCuda(patternBank* p, deviceDetector* d){
 }
 #endif
 
-vector<Sector*> SectorTree::getActivePatternsPerSector(int active_threshold){
+bool comparePatternOrder(GradedPattern* p1, GradedPattern* p2){
+  return p1->getOrderInChip()<p2->getOrderInChip();
+}
+
+vector<Sector*> SectorTree::getActivePatternsPerSector(int active_threshold, unsigned int max_nb_roads){
   vector<Sector*> list;
   for(unsigned int i=0;i<sector_list.size();i++){
     Sector* copy = new Sector(*sector_list[i]);
     vector<GradedPattern*> active_patterns = sector_list[i]->getActivePatterns(active_threshold);
+    sort(active_patterns.begin(),active_patterns.end(),comparePatternOrder);//order the roads by their chip's address
     for(unsigned int j=0;j<active_patterns.size();j++){
-      copy->getPatternTree()->addPattern(active_patterns[j], NULL, active_patterns[j]->getAveragePt());
+      if(j<max_nb_roads)
+	copy->getPatternTree()->addPattern(active_patterns[j], NULL, active_patterns[j]->getAveragePt());
       delete active_patterns[j];
     }
     list.push_back(copy);
@@ -150,13 +156,15 @@ vector<Sector*> SectorTree::getActivePatternsPerSector(int active_threshold){
   return list;
 }
 
-vector<Sector*> SectorTree::getActivePatternsPerSectorUsingMissingHit(int max_nb_missing_hit, int active_threshold){
+vector<Sector*> SectorTree::getActivePatternsPerSectorUsingMissingHit(int max_nb_missing_hit, int active_threshold, unsigned int max_nb_roads){
   vector<Sector*> list;
   for(unsigned int i=0;i<sector_list.size();i++){
     Sector* copy = new Sector(*sector_list[i]);
     vector<GradedPattern*> active_patterns = sector_list[i]->getActivePatternsUsingMissingHit(max_nb_missing_hit, active_threshold);
+    sort(active_patterns.begin(),active_patterns.end(),comparePatternOrder);//order the roads by their chip's address
     for(unsigned int j=0;j<active_patterns.size();j++){
-      copy->getPatternTree()->addPattern(active_patterns[j], NULL, active_patterns[j]->getAveragePt());
+      if(j<max_nb_roads)
+	copy->getPatternTree()->addPattern(active_patterns[j], NULL, active_patterns[j]->getAveragePt());
       delete active_patterns[j];
     }
     list.push_back(copy);

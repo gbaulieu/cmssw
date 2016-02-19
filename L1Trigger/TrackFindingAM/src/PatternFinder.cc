@@ -4,6 +4,7 @@ PatternFinder::PatternFinder(int at, SectorTree* st, string f, string of){
   active_threshold = at;
   max_nb_missing_hit = 0;
   useMissingHits=false;
+  max_road_number=1000000;
   sectors = st;
   eventsFilename = f;
   outputFileName = of;
@@ -79,6 +80,10 @@ PatternFinder::PatternFinder(int at, SectorTree* st, string f, string of, patter
 
 void PatternFinder::setSectorTree(SectorTree* s){
   sectors = s;
+}
+
+void PatternFinder::setMaxRoadNumber(unsigned int m){
+  max_road_number=m;
 }
 
 void PatternFinder::setEventsFile(string f){
@@ -810,10 +815,10 @@ vector<Sector*> PatternFinder::find(vector<Hit*> hits){
     tracker.receiveHit(*hits[i]);
   }
   if(useMissingHits){
-    return sectors->getActivePatternsPerSectorUsingMissingHit(max_nb_missing_hit, active_threshold);
+    return sectors->getActivePatternsPerSectorUsingMissingHit(max_nb_missing_hit, active_threshold, max_road_number);
   }
   else{
-    return sectors->getActivePatternsPerSector(active_threshold);
+    return sectors->getActivePatternsPerSector(active_threshold, max_road_number);
   }
 }
 

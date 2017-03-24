@@ -507,7 +507,7 @@ int CMSPatternLayer::getLadderCode(int layerID, int ladderID){
 }
 
  int CMSPatternLayer::getNbLadders(int layerID){
-   if(layerID<5 || layerID>24)
+   if(layerID<5 || layerID>22)
      return -1;
    switch(layerID){
    case 5 : return 18;
@@ -529,7 +529,7 @@ int CMSPatternLayer::getNbModules(int layerID, int ladderID){
     return 39;
   if(layerID>=8 && layerID<=10)
     return 24;
-  if(layerID>=11 && layerID<=24){
+  if(layerID>=11 && layerID<=22){
     switch(ladderID){
     case 0:return 20;
     case 1:return 24;

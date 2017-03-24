@@ -110,7 +110,30 @@ Sector& Sector::operator=(Sector& s){
 }
 
 bool Sector::operator==(Sector& s){
-  return (m_modules==s.m_modules && m_ladders==s.m_ladders);
+  /*
+  if(officialID!=s.officialID)
+    return false;
+  cout<<"ID is OK"<<endl;
+  if(m_modules.size() != s.m_modules.size())
+    return false;
+  cout<<"number of layers is OK"<<endl;
+  for(map<int, map<int, vector<int> > >::iterator it=m_modules.begin();it!=m_modules.end();it++){
+    map<int, vector<int> > ladders = m_modules[it->first];
+    map<int, vector<int> > ladders_2 = s.m_modules[it->first]; 
+    if(ladders.size()!=ladders_2.size())
+      return false;
+    cout<<"number of ladders on layer "<<it->first<<" is OK"<<endl;
+    for(map<int, vector<int> >::iterator it2=ladders.begin();it2!=ladders.end();it2++){
+      vector<int> modules = ladders[it2->first];
+      vector<int> modules_2 = ladders_2[it2->first];
+      if(modules.size()!=modules_2.size())
+        return false;
+      return std::equal ( modules.begin(), modules.end(), modules_2.begin() );
+    }
+  }
+  return true;
+  */
+  return (officialID==s.officialID && m_modules==s.m_modules && m_ladders==s.m_ladders);
 }
 
 void Sector::addLayer(int layer){
@@ -198,7 +221,6 @@ int Sector::getModuleCode(int layer, int ladder, int module) const{
   map<int, map<int, vector<int> > >::const_iterator it = m_modules.find(layer);
 
   if(it==m_modules.end()){
-    cout<<"layer non trouve"<<endl;
     return -1;//the layer does not exist
   }
 

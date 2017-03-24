@@ -3,6 +3,7 @@
 
 #include <map>
 #include <vector>
+#include <set>
 #include "PatternTrunk.h"
 #include "CMSPatternLayer.h"
 
@@ -17,6 +18,11 @@ class PatternTree{
   **/
   PatternTree();
   ~PatternTree();
+
+  /**
+     \brief Remove all patterns from the current PatternTree
+   **/
+  void clear();
  /**
      \brief Add a copy of the pattern to the structure or increment the grade of the already stored pattern
      \param ldp The low definition pattern (will be copied)
@@ -28,8 +34,9 @@ class PatternTree{
      \param ldp The low definition pattern
      \param fdp The corresponding full definition pattern (can be NULL if only one definition level is used)
      \param new_pt The Pt of the track generating the pattern
+     \param new_pdg The PDG of the track generating the pattern
   **/
-  void addPattern(Pattern* ldp, Pattern* fdp, float new_pt);
+  void addPattern(Pattern* ldp, Pattern* fdp, float new_pt, int new_pdg);
 
  /**
      \brief Get a copy of the full definition patterns
@@ -112,11 +119,26 @@ class PatternTree{
   void switchToVector();
 
   /**
+     \brief Remove the patterns which does not meet the requierements on tne number of fake superstrips
+     \param minFS The minimal number of fake superstrips
+     \param maxFS The maximal number of fake superstrips
+   **/
+  void removePatterns(int minFS, int maxFS);
+  
+  /**
      \brief Delete the least used patterns to match the given pattern number
      \param nbPatterns The number of patterns to keep
      \param sorting_algo Algorithm used to sort the patterns (0:by popularity, 1:by PT, 2:by mixed score+PT)
+     \param defective_patterns A list of non working addresses in the chip : this addresses will be populated with non activable placeholder patterns
   **/
   void truncate(int nbPatterns, int sorting_algo=0, vector<unsigned int> defective_patterns=vector<unsigned int>());
+
+  /**
+     \brief Replaces the existing PatternTree with a copy of the one in argument with fake superstrips on defective modules.
+     \param ref_pt The reference patterns tree
+     \param defective_modules A list of non working modules in the detector : the superstrips belonging to these modules will be replaced with Fake Superstrips (always active)
+  **/
+  void desactivateModules(PatternTree* ref_pt, set<unsigned int> defective_modules);
 
  private:
   map<string, PatternTrunk*> patterns;

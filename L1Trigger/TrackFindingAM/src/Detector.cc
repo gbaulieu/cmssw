@@ -2,6 +2,8 @@
 
 #include "../interface/SectorTree.h"
 
+int Detector::hw_limit_stub_per_layer=0;
+
 Detector::Detector(){
   dump=NULL;
   verbose = false;
@@ -19,6 +21,10 @@ void Detector::addLayer(int lNum, int nbLad, int nbMod, int nbSeg, int segmentSi
 void Detector::setSectorMaps(map<string,int> lm, map<string,int> mm){
   ladderMap = lm;
   moduleMap = mm;
+}
+
+void Detector::setHWPatternLimitations(int t){
+  Detector::hw_limit_stub_per_layer = t;
 }
 
 Detector::~Detector(){

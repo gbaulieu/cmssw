@@ -11,7 +11,6 @@
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/export.hpp>
 
-enum HW_SIGN_TYPE {UNSIGNED, SIGNED};
 
 enum SEC_TYPE {SEC_BARREL, SEC_HYBRID, SEC_ENDCAP};
 
@@ -42,8 +41,9 @@ class TCBuilder:public TrackFitter{
   double m_tabHybridThresholds[2][3][14][2];  //Hybrid LayMaxSeed1 = 1, LayMaxSeed2 = 2, LayMaxTestStub = 13
   double m_tabEndcapThresholds[4][5][16][2];  //Endcap LayMaxSeed1 = 3, LayMaxSeed2 = 4, LayMaxTestStub = 15
 
-  bool m_bHardwareSimulation;
   int m_nMissingHits;
+  unsigned int m_minimum_number_for_TC;
+  int maxseeds;
   LocalToGlobalConverter* l2gConverter;
 
   /**
@@ -53,7 +53,6 @@ class TCBuilder:public TrackFitter{
   void addThresholds(int, int, int, SEC_TYPE, double, double);
   void getThresholds(int, int, int, SEC_TYPE, double[]);
   char transcodeLayer(Hit *);
-  double binning(double, int, int, HW_SIGN_TYPE);
   void alignScore(Hit& , Hit& , Hit& , double []);
 
  public:
@@ -76,6 +75,17 @@ class TCBuilder:public TrackFitter{
   Track* createFittedTrack(vector <Hit*>&);
 
   void setLocalToGlobalConverter(LocalToGlobalConverter* l);
+  /**
+     \brief Set the maximum number of seeds that can be treated by the TC Builder (additional seeds will be droped)
+     \param nmax The maximum number of treated seeds
+   **/
+  void setMaxSeeds(int nmax);
+  /**
+     \brief Set the size of the pattern that will be fitted (number of active layers). 
+     \brief This method is meant to be used in CMSSW - in standalone version the value is automaticaly extracted from the patterns.
+     \param rs The number of active layers in the next fitted pattern (number of layers - number of fake superstrips)
+   **/
+  void setPatternSize(int rs);
  
   /**
      \brief Configure the way the computing is done

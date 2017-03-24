@@ -8,6 +8,7 @@ PatternFinder::PatternFinder(int at, SectorTree* st, string f, string of){
   sectors = st;
   eventsFilename = f;
   outputFileName = of;
+  hardware_limitations=false;
 
   //we don't need the map of patterns, a vector will be enough and uses less memory
   sectors->getAllSectors()[0]->getPatternTree()->switchToVector();
@@ -33,7 +34,7 @@ PatternFinder::PatternFinder(int at, SectorTree* st, string f, string of){
 
   tracker.setSectorMaps(sector_list[0]->getLadderCodeMap(),sector_list[0]->getModuleCodeMap());
 
-  converter = new LocalToGlobalConverter(sector_list[0],"./modules_position.txt");
+  converter = NULL;
 
   //Link the patterns with the tracker representation
   cout<<"linking..."<<endl;
@@ -42,7 +43,8 @@ PatternFinder::PatternFinder(int at, SectorTree* st, string f, string of){
 }
 
 PatternFinder::~PatternFinder(){
-  delete converter;
+  if(converter!=NULL)
+    delete converter;
 }
 
 #ifdef IPNL_USE_CUDA
@@ -90,6 +92,14 @@ void PatternFinder::setSectorTree(SectorTree* s){
 
 void PatternFinder::setMaxRoadNumber(unsigned int m){
   max_road_number=m;
+}
+
+void PatternFinder::setHardwareLimitations(bool b){
+  hardware_limitations = b;
+  if(hardware_limitations)
+    Detector::setHWPatternLimitations(HW_LIMIT_PATTERN_LAYER_STUBS);
+  else
+    Detector::setHWPatternLimitations(0);
 }
 
 void PatternFinder::setEventsFile(string f){
@@ -254,7 +264,11 @@ void PatternFinder::find(int start, int& stop){
 
   //TAMU PCA
   string dataDir = "./tamu_data/";
-  LinearizedTrackFitter linearizedTrackFitter(dataDir.c_str(), true, true);  
+  LinearizedTrackFitter linearizedTrackFitter(dataDir.c_str(), true, true);
+
+  //Initialization of local to global converter
+  if(converter==NULL)
+    converter = new PRBF2LocalToGlobalConverter(sectors->getAllSectors()[0],"./modules_position.txt");
 
   while(num_evt<n_entries_TT && num_evt<=stop){
     TT->GetEntry(num_evt);
@@ -318,6 +332,9 @@ void PatternFinder::find(int start, int& stop){
       if(sectors->getSector(*h)!=NULL){
 	hits.push_back(h);
 	hits_map[i]=h;
+	if(hardware_limitations && hits_map.size()>=HW_LIMIT_TOTAL_STUBS)
+	  // The harware cannot handle more than HW_LIMIT_TOTAL_STUBS stubs
+	  break;
       }
       else
 	delete(h);
@@ -402,6 +419,8 @@ void PatternFinder::find(int start, int& stop){
 	delete pl[j];
       }
 
+      double sec_phi = (pattern_list[i]->getOfficialID()%8) * M_PI / 4.0 - 0.4;
+
       // loop over TC
       nb_tc = (int)tracks.size();
       vector<double> tc_for_fit;
@@ -428,12 +447,14 @@ void PatternFinder::find(int start, int& stop){
 	  }
 	  unique_ptr<Hit> global_hit;
 	  try{
+	    if(converter==NULL)
+	      throw std::runtime_error("No local to global converter");
 	    vector<float> coords = converter->toGlobal(current_hit);
 	    global_hit = unique_ptr<Hit>(new Hit(0,0,0,0,0,0,0,0,0,0,0,coords[0],coords[1],coords[2],0,0,0,0));
 	  }
 	  catch(const std::runtime_error& e){
-	    cout<<e.what()<<endl;
-	    cout<<"Using CMSSW cartesian coordinates instead..."<<endl;
+	    //cout<<e.what()<<endl;
+	    //cout<<"Using CMSSW cartesian coordinates instead..."<<endl;
 	    global_hit = unique_ptr<Hit>(new Hit(0,0,0,0,0,0,0,0,0,0,0,current_hit->getX(),current_hit->getY(),current_hit->getZ(),0,0,0,0));
 	  }
 	  //cout<<"Polar coordinates : PHI="<<global_hit.getPolarPhi()<<", R="<<global_hit.getPolarDistance()<<", Z="<<global_hit.getZ()<<endl;
@@ -456,7 +477,10 @@ void PatternFinder::find(int start, int& stop){
 	  const std::vector<double> pars = linearizedTrackFitter.estimatedPars();
 	  float pt=1.0/fabs(pars[0]);
 	  float pz=pt*pars[2];
-	  float phi=pars[1];
+	  float phi=pars[1]+sec_phi;
+	  if(phi>M_PI)
+	    phi=phi-2*M_PI;
+
 	  shared_ptr<Track> pca_track = make_shared<Track>(pt,0,phi,asinh(pz/pt),pars[3],0,-1,-1,normChi2);
 	  for(unsigned int l=0;l<stubsInTrack.size();l++){
 	    pca_track->addStubIndex(stubsInTrack[l]);

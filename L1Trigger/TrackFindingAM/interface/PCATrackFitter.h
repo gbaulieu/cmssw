@@ -12,8 +12,10 @@
 #include <boost/serialization/export.hpp>
 
 
+#include "pcaconst.h"
+
 /**
-   \brief PCA fitter
+   \brief PCA fitter hfile : Loriano Storchi 2016
 **/
 class PCATrackFitter:public TrackFitter
 {
@@ -36,10 +38,20 @@ class PCATrackFitter:public TrackFitter
   BOOST_SERIALIZATION_SPLIT_MEMBER()
 
   Track *track_;
-  bool paramscmpt_;
-  std::string cfname_;
 
-  int m_charge;
+  std::string cfname_ ;
+  bool useboundaries_ ;
+  bool useinteger_ ;
+  bool storecpt_;
+
+  std::vector<pca::matrixpcaconst<double> > pcacontvct_float_;
+  std::vector<pca::matrixpcaconst<long long int> > pcacontvct_integer_;
+
+  std::vector<double> chi2v_;
+
+  /* we will merge these using TypeIs... structs */
+  void fit_float(vector<Hit*> hits);
+  void fit_integer(vector<Hit*> hits);
 
  public:
 
@@ -54,25 +66,43 @@ class PCATrackFitter:public TrackFitter
   PCATrackFitter(int nb);
   ~PCATrackFitter();
 
+  void fit();
   void initialize();
   void fit(vector<Hit*> hits, int pattern_id=-1);
-  void fit();
-  void setTrack(Track *intc); 
 
+  void setTrack(Track* intc); 
+
+  const std::vector<double> & get_chi2() const
+  {
+    return chi2v_;
+  }
+
+  void cleanChi2();
   void mergePatterns();
   void mergeTracks();
 
-  void set_const_filename(const std::string & in)
+  /* In case a second file is read values will be appended,
+   * initialize will remove all the values */
+  void read_float_const_filename (const std::string & in);
+  void read_integer_const_filename (const std::string & in);
+
+  void set_useinteger (const bool & in)
   {
-    cfname_ = in;
+    useinteger_ = in;
+  }
+  bool get_useinteger () const
+  {
+    return useinteger_;
   }
 
-  const std::string & get_const_filename () const
+  void set_useboundaries (const bool & in)
   {
-    return cfname_;
+    useboundaries_ = in;
   }
-
-
+  bool get_useboundaries () const
+  {
+    return useboundaries_;
+  }
 
   TrackFitter* clone();
 };

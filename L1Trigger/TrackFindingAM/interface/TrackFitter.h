@@ -3,7 +3,7 @@
 
 #include <vector>
 #include "Track.h"
-#include "Pattern.h"
+#include "GradedPattern.h"
 
 #include <boost/serialization/split_member.hpp>
 

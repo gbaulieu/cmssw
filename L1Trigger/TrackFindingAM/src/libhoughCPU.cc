@@ -204,7 +204,7 @@ for (int b_idx=0;b_idx<maxblock;b_idx++)  for (int t_idx=0;t_idx<maxthread;t_idx
 	    }
 	  pattern=d_hough_layer[ith*nbinrho+ir]; //@essai
 	  unsigned int np=0;
-	  bool l[25];
+	  bool l[24];
 	  for (int ip=1;ip<=24;ip++)
 	    {
 	      l[ip]=((pattern &(1<<ip))!=0);

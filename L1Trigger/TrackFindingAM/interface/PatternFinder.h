@@ -8,12 +8,16 @@
 #include <TROOT.h>
 #include <memory>
 #include "SectorTree.h"
-#include "LocalToGlobalConverter.h"
+#include "PRBF2LocalToGlobalConverter.h"
+#include "CMSSWLocalToGlobalConverter.h"
 #include "LinearizedTrackFitter.h"
 
 #ifdef IPNL_USE_CUDA
 #include "gpu.h"
 #endif
+
+#define HW_LIMIT_TOTAL_STUBS 1024
+#define HW_LIMIT_PATTERN_LAYER_STUBS 4
 
 using namespace std;
 
@@ -31,6 +35,7 @@ class PatternFinder{
   string outputFileName;
   Detector tracker;
   LocalToGlobalConverter* converter;
+  bool hardware_limitations;
 
 #ifdef IPNL_USE_CUDA
   deviceDetector* d_detector;  
@@ -87,6 +92,12 @@ class PatternFinder{
      \param m The number of active roads will be limited to the first m patterns (ordered by popularity)
   **/
   void setMaxRoadNumber(unsigned int m);
+
+  /**
+     \brief Set the harware limitations on/off
+     \param b True to activate the hw limitations, false to desactivate.
+  **/
+  void setHardwareLimitations(bool b);
 
   /**
      \brief Set the name of the root file containing events

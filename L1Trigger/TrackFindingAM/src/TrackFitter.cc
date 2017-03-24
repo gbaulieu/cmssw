@@ -17,7 +17,7 @@ TrackFitter::TrackFitter(int nb){
 vector<Pattern*> TrackFitter::getFilteredPatterns(){
   vector<Pattern*> copy;
   for(unsigned int i=0;i<patterns.size();i++){
-    copy.push_back(new Pattern(*patterns[i]));
+    copy.push_back(new GradedPattern(*patterns[i]));
   }
   return copy;
 }
@@ -43,7 +43,7 @@ void TrackFitter::clean(){
 }
 
 void TrackFitter::addPattern(Pattern* p){
-  patterns.push_back(new Pattern(*p));
+  patterns.push_back(new GradedPattern(*p));
 }
 
 void TrackFitter::setPhiRotation(double rot){

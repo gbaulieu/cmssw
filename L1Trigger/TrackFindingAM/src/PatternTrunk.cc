@@ -4,6 +4,10 @@ PatternTrunk::PatternTrunk(Pattern* p){
   lowDefPattern = new GradedPattern(*p);
 }
 
+PatternTrunk::PatternTrunk(GradedPattern* p){
+  lowDefPattern = new GradedPattern(*p);
+}
+
 PatternTrunk::PatternTrunk(){
   lowDefPattern = new GradedPattern();
 }
@@ -31,18 +35,18 @@ void PatternTrunk::addFDPattern(Pattern* p){
   }
 }
 
-void PatternTrunk::addFDPattern(Pattern* p, float pt){
-  lowDefPattern->increment(pt);
+void PatternTrunk::addFDPattern(Pattern* p, float pt, int pdg){
+  lowDefPattern->increment(pt,pdg);
   if(p!=NULL){
     string key=p->getKey();
     map<string, GradedPattern*>::iterator it = fullDefPatterns.find(key);
     if(it==fullDefPatterns.end()){//not found
       GradedPattern* gp = new GradedPattern(*p);
-      gp->increment(pt);
+      gp->increment(pt,pdg);
       fullDefPatterns[key]=gp;
     }
     else{
-      (it->second)->increment(pt);
+      (it->second)->increment(pt,pdg);
     }
   }
 }
@@ -171,6 +175,15 @@ void PatternTrunk::updateDCBits(GradedPattern* p){
       }
     }
   }
+}
+
+void PatternTrunk::updatePatternData(const GradedPattern& p){
+  lowDefPattern->mergeData(p);
+}
+
+void PatternTrunk::updateWithPattern(GradedPattern* gp){
+  updatePatternData(*gp);
+  updateDCBits(gp);
 }
 
 bool PatternTrunk::checkPattern(Pattern* hp){

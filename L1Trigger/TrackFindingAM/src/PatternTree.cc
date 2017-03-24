@@ -4,6 +4,10 @@ PatternTree::PatternTree(){
 }
 
 PatternTree::~PatternTree(){
+  clear();
+}
+
+void PatternTree::clear(){
   if(patterns.size()!=0){
     for(map<string, PatternTrunk*>::iterator itr = patterns.begin(); itr != patterns.end(); ++itr){
       delete (itr->second);
@@ -33,18 +37,18 @@ void PatternTree::addPattern(Pattern* ldp, Pattern* fdp){
   }
 }
 
-void PatternTree::addPattern(Pattern* ldp, Pattern* fdp, float new_pt){
+void PatternTree::addPattern(Pattern* ldp, Pattern* fdp, float new_pt, int new_pdg){
   if(patterns.size()==0)
     switchToMap();
   string key = ldp->getKey();
   map<string, PatternTrunk*>::iterator it = patterns.find(key);
   if(it==patterns.end()){//not found
     PatternTrunk* pt = new PatternTrunk(ldp);
-    pt->addFDPattern(fdp, new_pt);
+    pt->addFDPattern(fdp, new_pt, new_pdg);
     patterns[key]=pt;
   }
   else{
-    (it->second)->addFDPattern(fdp, new_pt);
+    (it->second)->addFDPattern(fdp, new_pt, new_pdg);
   }
 }
 
@@ -246,13 +250,12 @@ void PatternTree::addPatternsFromTree(PatternTree* p){
   vector<GradedPattern*> ld = p->getLDPatterns();
   for(unsigned int i=0;i<ld.size();i++){
     GradedPattern* patt = ld[i];
-    
+
     addPatternForMerging(patt);
     
     delete patt;
   }
 }
-
 
 void PatternTree::addPatternForMerging(GradedPattern* ldp){
   if(patterns.size()==0)
@@ -261,16 +264,10 @@ void PatternTree::addPatternForMerging(GradedPattern* ldp){
   map<string, PatternTrunk*>::iterator it = patterns.find(key);
   if(it==patterns.end()){//not found
     PatternTrunk* pt = new PatternTrunk(ldp);
-    for(int i=0;i<ldp->getGrade();i++){
-      pt->addFDPattern(NULL, ldp->getAveragePt());
-    }
     patterns[key]=pt;
   }
   else{
-    (it->second)->updateDCBits(ldp);
-    for(int i=0;i<ldp->getGrade();i++){
-      (it->second)->addFDPattern(NULL, ldp->getAveragePt());
-    }
+    (it->second)->updateWithPattern(ldp);
   }
 }
 
@@ -316,6 +313,34 @@ struct ScoreComparer {
   float pt_span;
   float grade_span;
 };
+
+void PatternTree::desactivateModules(PatternTree* ref_pt, set<unsigned int> defective_modules){
+  clear();
+  ref_pt->switchToVector();
+  CMSPatternLayer fakeSuperstrip;
+  fakeSuperstrip.computeSuperstrip(0,0,0,0,0,0,false,true);
+
+  for(unsigned int i=0;i<ref_pt->v_patterns.size();i++){
+    //If we have dead modules : we replace the corresponding superstrips by fake ones
+    if(defective_modules.size()>0){
+      int nbLayers = ref_pt->v_patterns[i]->getLDPattern()->getNbLayers();
+      GradedPattern* nPattern = ref_pt->v_patterns[i]->getLDPattern();
+      // Loop over the layers
+      for(int k=0;k<nbLayers;k++){
+	CMSPatternLayer* pl = (CMSPatternLayer*)nPattern->getLayerStrip(k);
+	// If the superstrip is already a fake one : nothing to do
+	if(!pl->isFake()){
+	  unsigned int module = k*100000+pl->getPhi()*1000+pl->getModule()*10+pl->getSegment();
+	  if(defective_modules.find(module) != defective_modules.end()){
+	    nPattern->setLayerStrip(k,&fakeSuperstrip);
+	  }
+	}
+      }
+      addPatternForMerging(nPattern);
+      delete nPattern;
+    }
+  }
+}
 
 void PatternTree::truncate(int nbPatterns, int sorting_algo, vector<unsigned int> defective_addresses){
   switchToVector();
@@ -374,7 +399,7 @@ void PatternTree::truncate(int nbPatterns, int sorting_algo, vector<unsigned int
     for(unsigned int k=0;k<defective_addresses.size();k++){
       //Creating an invalid pattern to fill the defective addresses of the chip
       int nbLayers = v_patterns[0]->getLDPattern()->getNbLayers();
-      Pattern* pat = new Pattern(nbLayers);
+      Pattern* pat = new GradedPattern(nbLayers);
       for(int i=0;i<nbLayers;i++){
 	CMSPatternLayer pl;
 	pl.computeSuperstrip(5, 31, k/128, k%128, 0, 1, false, false);
@@ -413,6 +438,28 @@ void PatternTree::truncate(int nbPatterns, int sorting_algo, vector<unsigned int
   for(unsigned int i=0;i<v_patterns.size();i++){
     v_patterns[i]->setOrderInChip(i);
   }
+
+  switchToMap();
+}
+
+void PatternTree::removePatterns(int minFS, int maxFS){
+  switchToVector();
+
+  vector<PatternTrunk*>::iterator itr = v_patterns.begin();
+
+  int min = minFS;
+  int max = maxFS;
+
+  auto it = std::remove_if (v_patterns.begin(), v_patterns.end(), [min,max](PatternTrunk* p){
+      GradedPattern* ldp = p->getLDPattern();
+      int nbFS = ldp->getNbFakeSuperstrips();
+      delete ldp;
+      if (nbFS>max || nbFS<min) {
+        return true;
+      }
+      return false;
+    });
+  v_patterns.erase(it, v_patterns.end());
 
   switchToMap();
 }

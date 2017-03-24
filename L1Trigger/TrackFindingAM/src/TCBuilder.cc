@@ -13,8 +13,9 @@ TCBuilder::TCBuilder():TrackFitter(0){
 TCBuilder::TCBuilder(int nb):TrackFitter(nb)
 {
   l2gConverter=NULL;
-  m_nMissingHits = 1;                 //Maximum number of missing layers in a TC (from the number of layers in the pattern)
-  m_bHardwareSimulation = false;      //Define if the Hardware binning and overflows are emulated
+  m_nMissingHits = 1;
+  m_minimum_number_for_TC = 0;                 //Minimum number of layers with stub to a create a TC (defined per pattern)
+  maxseeds=-1; // By default all seeds are used.
   updateThresholds();
 }
 
@@ -30,192 +31,100 @@ void TCBuilder::setLocalToGlobalConverter(LocalToGlobalConverter* l){
   l2gConverter = l;
 }
 
+void TCBuilder::setMaxSeeds(int nmax){
+  maxseeds = nmax;
+}
+
+void TCBuilder::setPatternSize(int rs){
+  if(rs>0)
+    m_minimum_number_for_TC = rs-m_nMissingHits;
+}
+
 void TCBuilder::setHardwareEmulation(bool hardwareEmulation)
 {
-  m_bHardwareSimulation = hardwareEmulation;
+  CommonTools::hardwareSimulation = hardwareEmulation;
   updateThresholds();
 }
 
 void TCBuilder::updateThresholds(){
 
-  if (m_bHardwareSimulation){
+  if (CommonTools::hardwareSimulation){
     //// Hardware format LUT constants ////
-    /*
-    //Barrel
-    addThresholds( 0,  1,  2, SEC_BARREL, 0.002117, 0.298828);
-    addThresholds( 0,  1,  8, SEC_BARREL, 0.005257, 2.695801);
-    addThresholds( 0,  1,  9, SEC_BARREL, 0.010082, 2.861084);
-    addThresholds( 0,  1, 10, SEC_BARREL, 0.012878, 3.115967);
-    addThresholds( 0,  2,  8, SEC_BARREL, 0.002262, 2.535645);
-    addThresholds( 0,  2,  9, SEC_BARREL, 0.005077, 2.578613);
-    addThresholds( 0,  2, 10, SEC_BARREL, 0.007915, 2.765625);
-    addThresholds( 1,  2,  8, SEC_BARREL, 0.001514, 2.562988);
-    addThresholds( 1,  2,  9, SEC_BARREL, 0.004452, 2.700928);
-    addThresholds( 1,  2, 10, SEC_BARREL, 0.007317, 2.892578);
 
-    //Hybrid
-    addThresholds( 0,  1,  2, SEC_HYBRID, 0.002125, 0.331055);
-    addThresholds( 0,  1,  8, SEC_HYBRID, 0.004444, 2.867432);
-    addThresholds( 0,  1,  9, SEC_HYBRID, 0.008244, 2.764160);
-    addThresholds( 0,  1, 10, SEC_HYBRID, 0.009171, 3.031006);
-    addThresholds( 0,  1, 11, SEC_HYBRID, 0.009350, 4.846436);
-    addThresholds( 0,  1, 12, SEC_HYBRID, 0.009167, 5.155273);
-    addThresholds( 0,  1, 13, SEC_HYBRID, 0.013248, 5.164795);
-    addThresholds( 0,  2,  8, SEC_HYBRID, 0.002472, 2.536133);
-    addThresholds( 0,  2,  9, SEC_HYBRID, 0.004913, 2.634033);
-    addThresholds( 0,  2, 10, SEC_HYBRID, 0.004910, 2.887451);
-    addThresholds( 0,  2, 11, SEC_HYBRID, 0.006683, 4.866699);
-    addThresholds( 0,  2, 12, SEC_HYBRID, 0.006672, 5.009277);
-    addThresholds( 0,  2, 13, SEC_HYBRID, 0.008404, 5.110840);
-    addThresholds( 1,  2,  8, SEC_HYBRID, 0.002354, 2.580078);
-    addThresholds( 1,  2,  9, SEC_HYBRID, 0.007805, 2.699951);
-    addThresholds( 1,  2, 10, SEC_HYBRID, 0.003143, 2.849121);
-    addThresholds( 1,  2, 11, SEC_HYBRID, 0.006020, 4.935059);
-    addThresholds( 1,  2, 12, SEC_HYBRID, 0.006187, 5.085938);
-    addThresholds( 1,  2, 13, SEC_HYBRID, 0.005692, 5.270752);
+    addThresholds( 0,  1,  3, SEC_ENDCAP, 0.00408554077148437500, 0.63134765625000000000);
+    addThresholds( 0,  1,  4, SEC_ENDCAP, 0.00606918334960937500, 1.22338867187500000000);
+    addThresholds( 0,  1,  5, SEC_ENDCAP, 0.00756835937500000000, 1.37548828125000000000);
+    addThresholds( 0,  1, 11, SEC_ENDCAP, 0.00791549682617187500, 5.45458984375000000000);
+    addThresholds( 0,  1, 12, SEC_ENDCAP, 0.01086425781250000000, 6.17846679687500000000);
+    addThresholds( 0,  1, 13, SEC_ENDCAP, 0.01330947875976562500, 7.08740234375000000000);
+    addThresholds( 0,  1, 14, SEC_ENDCAP, 0.01737594604492187500, 7.40600585937500000000);
+    addThresholds( 0,  1, 15, SEC_ENDCAP, 0.01712799072265625000, 8.18334960937500000000);
+    addThresholds( 0,  3,  4, SEC_ENDCAP, 0.00185775756835937500, 0.97607421875000000000);
+    addThresholds( 0,  3,  5, SEC_ENDCAP, 0.00394439697265625000, 1.46850585937500000000);
+    addThresholds( 0,  3,  6, SEC_ENDCAP, 0.00727081298828125000, 2.31469726562500000000);
+    addThresholds( 0,  3,  7, SEC_ENDCAP, 0.01189422607421875000, 3.46313476562500000000);
+    addThresholds( 0,  3, 11, SEC_ENDCAP, 0.00584793090820312500, 5.71972656250000000000);
+    addThresholds( 0,  3, 12, SEC_ENDCAP, 0.00525283813476562500, 6.21728515625000000000);
+    addThresholds( 0,  3, 13, SEC_ENDCAP, 0.00622558593750000000, 7.14184570312500000000);
+    addThresholds( 0,  3, 14, SEC_ENDCAP, 0.00809860229492187500, 8.37329101562500000000);
+    addThresholds( 0,  3, 15, SEC_ENDCAP, 0.01074600219726562500, 10.42944335937500000000);
+    addThresholds( 0,  4,  5, SEC_ENDCAP, 0.00188446044921875000, 0.79711914062500000000);
+    addThresholds( 0,  4,  6, SEC_ENDCAP, 0.00409317016601562500, 1.14843750000000000000);
+    addThresholds( 0,  4,  7, SEC_ENDCAP, 0.00736618041992187500, 1.62402343750000000000);
+    addThresholds( 0,  4, 12, SEC_ENDCAP, 0.00636672973632812500, 6.70434570312500000000);
+    addThresholds( 0,  4, 13, SEC_ENDCAP, 0.00527191162109375000, 7.42749023437500000000);
+    addThresholds( 0,  4, 14, SEC_ENDCAP, 0.00624465942382812500, 8.50512695312500000000);
+    addThresholds( 0,  4, 15, SEC_ENDCAP, 0.00770568847656250000, 10.11230468750000000000);
+    addThresholds( 1,  3,  4, SEC_ENDCAP, 0.00173950195312500000, 0.81323242187500000000);
+    addThresholds( 1,  3,  5, SEC_ENDCAP, 0.00442504882812500000, 1.23291015625000000000);
+    addThresholds( 1,  3, 11, SEC_ENDCAP, 0.00558471679687500000, 5.72119140625000000000);
+    addThresholds( 1,  3, 12, SEC_ENDCAP, 0.00519180297851562500, 6.19433593750000000000);
+    addThresholds( 1,  3, 13, SEC_ENDCAP, 0.00575637817382812500, 7.19091796875000000000);
+    addThresholds( 1,  3, 14, SEC_ENDCAP, 0.00707244873046875000, 7.69384765625000000000);
+    addThresholds( 1,  3, 15, SEC_ENDCAP, 0.01002883911132812500, 8.91235351562500000000);
+    addThresholds( 1,  4,  5, SEC_ENDCAP, 0.00331115722656250000, 0.80493164062500000000);
+    addThresholds( 1,  4, 12, SEC_ENDCAP, 0.00575256347656250000, 6.63671875000000000000);
+    addThresholds( 1,  4, 13, SEC_ENDCAP, 0.00526046752929687500, 7.41308593750000000000);
+    addThresholds( 1,  4, 14, SEC_ENDCAP, 0.00607299804687500000, 7.76953125000000000000);
+    addThresholds( 1,  4, 15, SEC_ENDCAP, 0.00779342651367187500, 7.99926757812500000000);
+    addThresholds( 3,  4,  5, SEC_ENDCAP, 0.00134277343750000000, 1.21142578125000000000);
+    addThresholds( 3,  4,  6, SEC_ENDCAP, 0.00341415405273437500, 2.15625000000000000000);
+    addThresholds( 3,  4,  7, SEC_ENDCAP, 0.00611495971679687500, 3.18896484375000000000);
+    addThresholds( 3,  4, 12, SEC_ENDCAP, 0.00630187988281250000, 6.79858398437500000000);
+    addThresholds( 3,  4, 13, SEC_ENDCAP, 0.00521850585937500000, 7.54370117187500000000);
+    addThresholds( 3,  4, 14, SEC_ENDCAP, 0.00571441650390625000, 8.86938476562500000000);
+    addThresholds( 3,  4, 15, SEC_ENDCAP, 0.00725173950195312500, 10.91772460937500000000);
 
-    //Endcap
-    addThresholds( 0,  1,  3, SEC_ENDCAP, 0.003838, 0.457275);
-    addThresholds( 0,  1,  4, SEC_ENDCAP, 0.007999, 0.611084);
-    addThresholds( 0,  1,  5, SEC_ENDCAP, 0.002743, 0.502197);
-    addThresholds( 0,  1, 11, SEC_ENDCAP, 0.006119, 5.451172);
-    addThresholds( 0,  1, 12, SEC_ENDCAP, 0.007030, 6.014893);
-    addThresholds( 0,  1, 13, SEC_ENDCAP, 0.012161, 7.055176);
-    addThresholds( 0,  1, 14, SEC_ENDCAP, 0.017605, 7.991699);
-    addThresholds( 0,  1, 15, SEC_ENDCAP, 0.027527, 7.594482);
-    addThresholds( 0,  3,  4, SEC_ENDCAP, 0.002586, 0.788574);
-    addThresholds( 0,  3,  5, SEC_ENDCAP, 0.003773, 1.233887);
-    addThresholds( 0,  3,  6, SEC_ENDCAP, 0.004192, 1.924805);
-    addThresholds( 0,  3,  7, SEC_ENDCAP, 0.006290, 2.382568);
-    addThresholds( 0,  3, 11, SEC_ENDCAP, 0.004772, 5.415283);
-    addThresholds( 0,  3, 12, SEC_ENDCAP, 0.005955, 6.401367);
-    addThresholds( 0,  3, 13, SEC_ENDCAP, 0.006142, 6.928223);
-    addThresholds( 0,  3, 14, SEC_ENDCAP, 0.009441, 8.484619);
-    addThresholds( 0,  3, 15, SEC_ENDCAP, 0.015686, 10.022217);
-    addThresholds( 0,  4,  5, SEC_ENDCAP, 0.001667, 0.804443);
-    addThresholds( 0,  4,  6, SEC_ENDCAP, 0.003101, 0.898438);
-    addThresholds( 0,  4,  7, SEC_ENDCAP, 0.004223, 1.154297);
-    addThresholds( 0,  4, 12, SEC_ENDCAP, 0.005821, 6.302246);
-    addThresholds( 0,  4, 13, SEC_ENDCAP, 0.004322, 7.031738);
-    addThresholds( 0,  4, 14, SEC_ENDCAP, 0.006763, 8.208984);
-    addThresholds( 0,  4, 15, SEC_ENDCAP, 0.010582, 10.083984);
-    addThresholds( 1,  3,  4, SEC_ENDCAP, 0.001503, 0.739502);
-    addThresholds( 1,  3,  5, SEC_ENDCAP, 0.001484, 0.997070);
-    addThresholds( 1,  3, 11, SEC_ENDCAP, 0.004833, 5.438965);
-    addThresholds( 1,  3, 12, SEC_ENDCAP, 0.005066, 6.509766);
-    addThresholds( 1,  3, 13, SEC_ENDCAP, 0.005581, 6.774414);
-    addThresholds( 1,  3, 14, SEC_ENDCAP, 0.006779, 8.566895);
-    addThresholds( 1,  3, 15, SEC_ENDCAP, 0.008495, 6.973633);
-    addThresholds( 1,  4,  5, SEC_ENDCAP, 0.000893, 0.485352);
-    addThresholds( 1,  4, 12, SEC_ENDCAP, 0.004780, 6.164062);
-    addThresholds( 1,  4, 13, SEC_ENDCAP, 0.004242, 7.127197);
-    addThresholds( 1,  4, 14, SEC_ENDCAP, 0.006092, 7.571777);
-    addThresholds( 1,  4, 15, SEC_ENDCAP, 0.006893, 6.656494);
-    addThresholds( 3,  4,  5, SEC_ENDCAP, 0.001774, 1.175781);
-    addThresholds( 3,  4,  6, SEC_ENDCAP, 0.002792, 2.051514);
-    addThresholds( 3,  4,  7, SEC_ENDCAP, 0.004890, 3.117188);
-    addThresholds( 3,  4, 12, SEC_ENDCAP, 0.006310, 6.310059);
-    addThresholds( 3,  4, 13, SEC_ENDCAP, 0.004448, 7.303711);
-    addThresholds( 3,  4, 14, SEC_ENDCAP, 0.005508, 8.145264);
-    addThresholds( 3,  4, 15, SEC_ENDCAP, 0.006287, 11.077881);
-    */
+    addThresholds( 0,  1,  2, SEC_BARREL, 0.00342941284179687500, 0.57543945312500000000);
+    addThresholds( 0,  1,  8, SEC_BARREL, 0.00617980957031250000, 2.71679687500000000000);
+    addThresholds( 0,  1,  9, SEC_BARREL, 0.01032638549804687500, 2.93017578125000000000);
+    addThresholds( 0,  1, 10, SEC_BARREL, 0.01612091064453125000, 3.89453125000000000000);
+    addThresholds( 0,  2,  8, SEC_BARREL, 0.00391769409179687500, 2.55566406250000000000);
+    addThresholds( 0,  2,  9, SEC_BARREL, 0.00702285766601562500, 2.69750976562500000000);
+    addThresholds( 0,  2, 10, SEC_BARREL, 0.01240158081054687500, 3.70800781250000000000);
+    addThresholds( 1,  2,  8, SEC_BARREL, 0.00452804565429687500, 2.60107421875000000000);
+    addThresholds( 1,  2,  9, SEC_BARREL, 0.00805282592773437500, 2.85424804687500000000);
+    addThresholds( 1,  2, 10, SEC_BARREL, 0.01434326171875000000, 4.43383789062500000000);
 
-    //Electron-friendly tuning
-
-    //BARREL Thresholds
-    
-    addThresholds( 0,  1,  2, SEC_BARREL, 0.002430, 0.258545);
-    addThresholds( 0,  1,  8, SEC_BARREL, 0.007214, 2.565430);
-    addThresholds( 0,  1,  9, SEC_BARREL, 0.013851, 2.884277);
-    addThresholds( 0,  1, 10, SEC_BARREL, 0.020172, 3.101318);
-    addThresholds( 0,  2,  8, SEC_BARREL, 0.002853, 2.481934);
-    addThresholds( 0,  2,  9, SEC_BARREL, 0.007881, 2.641846);
-    addThresholds( 0,  2, 10, SEC_BARREL, 0.013268, 2.653564);
-    addThresholds( 1,  2,  8, SEC_BARREL, 0.002102, 2.533447);
-    addThresholds( 1,  2,  9, SEC_BARREL, 0.006767, 2.750977);
-    addThresholds( 1,  2, 10, SEC_BARREL, 0.010689, 2.840576);
-    
-    /*
-    // FIRMWARE VERSION
-    addThresholds( 0, 1 , 2,  SEC_BARREL, 0.0019989013672, 0.29882812500 );
-    addThresholds( 0, 1 , 8,  SEC_BARREL, 0.0053253173828, 2.69580078125 );
-    addThresholds( 0, 1 , 9,  SEC_BARREL, 0.0101089477539, 2.86108398438 );
-    addThresholds( 0, 1 , 10, SEC_BARREL, 0.0125579833984, 3.11596679688 );
-    addThresholds( 0, 2 , 8,  SEC_BARREL, 0.0021095275879, 2.53564453125 );
-    addThresholds( 0, 2 , 9,  SEC_BARREL, 0.0047416687012, 2.57861328125 );
-    addThresholds( 0, 2 , 10, SEC_BARREL, 0.0076522827148, 2.76562500000 );
-    addThresholds( 1, 2 , 8,  SEC_BARREL, 0.0012397766113, 2.56298828125 );
-    addThresholds( 1, 2 , 9,  SEC_BARREL, 0.0041351318359, 2.70092773438 );
-    addThresholds( 1, 2 , 10, SEC_BARREL, 0.0070762634277, 2.89257812500 );
-    */
-
-    //HYBRID Thresholds
-
-    addThresholds( 0,  1,  2, SEC_HYBRID, 0.003571, 0.342285);
-    addThresholds( 0,  1,  8, SEC_HYBRID, 0.008400, 2.596680);
-    addThresholds( 0,  1,  9, SEC_HYBRID, 0.017197, 13.469482);
-    addThresholds( 0,  1, 10, SEC_HYBRID, 0.024376, 2.769043);
-    addThresholds( 0,  1, 11, SEC_HYBRID, 0.014572, 4.973389);
-    addThresholds( 0,  1, 12, SEC_HYBRID, 0.020790, 5.323242);
-    addThresholds( 0,  1, 13, SEC_HYBRID, 0.034599, 5.161133);
-    addThresholds( 0,  2,  8, SEC_HYBRID, 0.004368, 2.557861);
-    addThresholds( 0,  2,  9, SEC_HYBRID, 0.011086, 14.265869);
-    addThresholds( 0,  2, 10, SEC_HYBRID, 0.019115, 2.652344);
-    addThresholds( 0,  2, 11, SEC_HYBRID, 0.008831, 4.853760);
-    addThresholds( 0,  2, 12, SEC_HYBRID, 0.013206, 5.266602);
-    addThresholds( 0,  2, 13, SEC_HYBRID, 0.019588, 4.985596);
-    addThresholds( 1,  2,  8, SEC_HYBRID, 0.002937, 2.502197);
-    addThresholds( 1,  2,  9, SEC_HYBRID, 0.008301, 2.742432);
-    addThresholds( 1,  2, 10, SEC_HYBRID, 0.015064, 2.649414);
-    addThresholds( 1,  2, 11, SEC_HYBRID, 0.006542, 4.904053);
-    addThresholds( 1,  2, 12, SEC_HYBRID, 0.011208, 5.251953);
-    addThresholds( 1,  2, 13, SEC_HYBRID, 0.020657, 5.178711);
-
-    //ENDCAP Thresholds
-
-    addThresholds( 0,  1,  3, SEC_ENDCAP, 0.006020, 0.723389);
-    addThresholds( 0,  1,  4, SEC_ENDCAP, 0.007324, 1.444092);
-    addThresholds( 0,  1,  5, SEC_ENDCAP, 0.015270, 3.011719);
-    addThresholds( 0,  1, 11, SEC_ENDCAP, 0.010128, 5.459717);
-    addThresholds( 0,  1, 12, SEC_ENDCAP, 0.017727, 6.568848);
-    addThresholds( 0,  1, 13, SEC_ENDCAP, 0.021851, 7.088379);
-    addThresholds( 0,  1, 14, SEC_ENDCAP, 0.027161, 7.716064);
-    addThresholds( 0,  1, 15, SEC_ENDCAP, 0.029243, 13.599121);
-    addThresholds( 0,  3,  4, SEC_ENDCAP, 0.003147, 0.819824);
-    addThresholds( 0,  3,  5, SEC_ENDCAP, 0.009666, 1.820801);
-    addThresholds( 0,  3,  6, SEC_ENDCAP, 0.024063, 4.271484);
-    addThresholds( 0,  3,  7, SEC_ENDCAP, 0.027016, 4.478516);
-    addThresholds( 0,  3, 11, SEC_ENDCAP, 0.003677, 5.475830);
-    addThresholds( 0,  3, 12, SEC_ENDCAP, 0.003544, 6.346191);
-    addThresholds( 0,  3, 13, SEC_ENDCAP, 0.008240, 7.268311);
-    addThresholds( 0,  3, 14, SEC_ENDCAP, 0.013584, 8.404053);
-    addThresholds( 0,  3, 15, SEC_ENDCAP, 0.023396, 11.208008);
-    addThresholds( 0,  4,  5, SEC_ENDCAP, 0.004978, 0.670410);
-    addThresholds( 0,  4,  6, SEC_ENDCAP, 0.015648, 1.067627);
-    addThresholds( 0,  4,  7, SEC_ENDCAP, 0.017376, 1.441406);
-    addThresholds( 0,  4, 12, SEC_ENDCAP, 0.002266, 6.742188);
-    addThresholds( 0,  4, 13, SEC_ENDCAP, 0.004456, 7.393311);
-    addThresholds( 0,  4, 14, SEC_ENDCAP, 0.009815, 8.468262);
-    addThresholds( 0,  4, 15, SEC_ENDCAP, 0.021973, 10.123779);
-    addThresholds( 1,  3,  4, SEC_ENDCAP, 0.001705, 0.680664);
-    addThresholds( 1,  3,  5, SEC_ENDCAP, 0.004986, 1.090088);
-    addThresholds( 1,  3, 11, SEC_ENDCAP, 0.002178, 5.776855);
-    addThresholds( 1,  3, 12, SEC_ENDCAP, 0.003033, 6.407715);
-    addThresholds( 1,  3, 13, SEC_ENDCAP, 0.005295, 7.295410);
-    addThresholds( 1,  3, 14, SEC_ENDCAP, 0.010818, 7.772949);
-    addThresholds( 1,  3, 15, SEC_ENDCAP, 0.017426, 9.492676);
-    addThresholds( 1,  4,  5, SEC_ENDCAP, 0.002354, 0.566895);
-    addThresholds( 1,  4, 12, SEC_ENDCAP, 0.002506, 6.736816);
-    addThresholds( 1,  4, 13, SEC_ENDCAP, 0.003357, 7.362305);
-    addThresholds( 1,  4, 14, SEC_ENDCAP, 0.007397, 7.603760);
-    addThresholds( 1,  4, 15, SEC_ENDCAP, 0.013905, 8.285400);
-    addThresholds( 3,  4,  5, SEC_ENDCAP, 0.002979, 1.090332);
-    addThresholds( 3,  4,  6, SEC_ENDCAP, 0.015022, 1.979980);
-    addThresholds( 3,  4,  7, SEC_ENDCAP, 0.012508, 3.361328);
-    addThresholds( 3,  4, 12, SEC_ENDCAP, 0.002728, 6.763672);
-    addThresholds( 3,  4, 13, SEC_ENDCAP, 0.002956, 7.253662);
-    addThresholds( 3,  4, 14, SEC_ENDCAP, 0.006905, 9.328613);
-    addThresholds( 3,  4, 15, SEC_ENDCAP, 0.015789, 11.533936);
+    addThresholds( 0,  1,  2, SEC_HYBRID, 0.00379562377929687500, 0.51196289062500000000);
+    addThresholds( 0,  1,  8, SEC_HYBRID, 0.00775527954101562500, 2.78686523437500000000);
+    addThresholds( 0,  1,  9, SEC_HYBRID, 0.01086807250976562500, 3.05126953125000000000);
+    addThresholds( 0,  1, 10, SEC_HYBRID, 0.01525878906250000000, 5.78320312500000000000);
+    addThresholds( 0,  1, 11, SEC_HYBRID, 0.01112365722656250000, 5.12768554687500000000);
+    addThresholds( 0,  1, 12, SEC_HYBRID, 0.01467132568359375000, 5.28295898437500000000);
+    addThresholds( 0,  1, 13, SEC_HYBRID, 0.02006149291992187500, 5.51098632812500000000);
+    addThresholds( 0,  2,  8, SEC_HYBRID, 0.00384140014648437500, 2.58593750000000000000);
+    addThresholds( 0,  2,  9, SEC_HYBRID, 0.00765609741210937500, 2.80224609375000000000);
+    addThresholds( 0,  2, 10, SEC_HYBRID, 0.01053619384765625000, 4.22973632812500000000);
+    addThresholds( 0,  2, 11, SEC_HYBRID, 0.00677490234375000000, 4.82226562500000000000);
+    addThresholds( 0,  2, 12, SEC_HYBRID, 0.00902557373046875000, 5.01293945312500000000);
+    addThresholds( 0,  2, 13, SEC_HYBRID, 0.01129150390625000000, 5.31420898437500000000);
+    addThresholds( 1,  2,  8, SEC_HYBRID, 0.00382232666015625000, 2.62939453125000000000);
+    addThresholds( 1,  2,  9, SEC_HYBRID, 0.00746154785156250000, 2.88012695312500000000);
+    addThresholds( 1,  2, 10, SEC_HYBRID, 0.01178359985351562500, 4.67285156250000000000);
+    addThresholds( 1,  2, 11, SEC_HYBRID, 0.00666427612304687500, 4.91992187500000000000);
+    addThresholds( 1,  2, 12, SEC_HYBRID, 0.00848007202148437500, 5.12963867187500000000);
+    addThresholds( 1,  2, 13, SEC_HYBRID, 0.01080703735351562500, 5.34667968750000000000);
 
     //// Hardware format LUT constants ////
 
@@ -223,84 +132,81 @@ void TCBuilder::updateThresholds(){
   else{
     ///// Floating point Thresholds ////
 
-    //Barrel
-    addThresholds( 0,  1,  2, SEC_BARREL, 0.002031, 0.295711);
-    addThresholds( 0,  1,  8, SEC_BARREL, 0.005259, 2.692444);
-    addThresholds( 0,  1,  9, SEC_BARREL, 0.010119, 2.865237);
-    addThresholds( 0,  1, 10, SEC_BARREL, 0.012580, 3.116440);
-    addThresholds( 0,  2,  8, SEC_BARREL, 0.002157, 2.534317);
-    addThresholds( 0,  2,  9, SEC_BARREL, 0.004695, 2.579884);
-    addThresholds( 0,  2, 10, SEC_BARREL, 0.007653, 2.771254);
-    addThresholds( 1,  2,  8, SEC_BARREL, 0.001197, 2.562876);
-    addThresholds( 1,  2,  9, SEC_BARREL, 0.004099, 2.697098);
-    addThresholds( 1,  2, 10, SEC_BARREL, 0.007030, 2.893524);
+    addThresholds( 0,  1,  3, SEC_ENDCAP, 0.00408554077148437500, 0.63134765625000000000);
+    addThresholds( 0,  1,  4, SEC_ENDCAP, 0.00606918334960937500, 1.22338867187500000000);
+    addThresholds( 0,  1,  5, SEC_ENDCAP, 0.00756835937500000000, 1.37548828125000000000);
+    addThresholds( 0,  1, 11, SEC_ENDCAP, 0.00791549682617187500, 5.45458984375000000000);
+    addThresholds( 0,  1, 12, SEC_ENDCAP, 0.01086425781250000000, 6.17846679687500000000);
+    addThresholds( 0,  1, 13, SEC_ENDCAP, 0.01330947875976562500, 7.08740234375000000000);
+    addThresholds( 0,  1, 14, SEC_ENDCAP, 0.01737594604492187500, 7.40600585937500000000);
+    addThresholds( 0,  1, 15, SEC_ENDCAP, 0.01712799072265625000, 8.18334960937500000000);
+    addThresholds( 0,  3,  4, SEC_ENDCAP, 0.00185775756835937500, 0.97607421875000000000);
+    addThresholds( 0,  3,  5, SEC_ENDCAP, 0.00394439697265625000, 1.46850585937500000000);
+    addThresholds( 0,  3,  6, SEC_ENDCAP, 0.00727081298828125000, 2.31469726562500000000);
+    addThresholds( 0,  3,  7, SEC_ENDCAP, 0.01189422607421875000, 3.46313476562500000000);
+    addThresholds( 0,  3, 11, SEC_ENDCAP, 0.00584793090820312500, 5.71972656250000000000);
+    addThresholds( 0,  3, 12, SEC_ENDCAP, 0.00525283813476562500, 6.21728515625000000000);
+    addThresholds( 0,  3, 13, SEC_ENDCAP, 0.00622558593750000000, 7.14184570312500000000);
+    addThresholds( 0,  3, 14, SEC_ENDCAP, 0.00809860229492187500, 8.37329101562500000000);
+    addThresholds( 0,  3, 15, SEC_ENDCAP, 0.01074600219726562500, 10.42944335937500000000);
+    addThresholds( 0,  4,  5, SEC_ENDCAP, 0.00188446044921875000, 0.79711914062500000000);
+    addThresholds( 0,  4,  6, SEC_ENDCAP, 0.00409317016601562500, 1.14843750000000000000);
+    addThresholds( 0,  4,  7, SEC_ENDCAP, 0.00736618041992187500, 1.62402343750000000000);
+    addThresholds( 0,  4, 12, SEC_ENDCAP, 0.00636672973632812500, 6.70434570312500000000);
+    addThresholds( 0,  4, 13, SEC_ENDCAP, 0.00527191162109375000, 7.42749023437500000000);
+    addThresholds( 0,  4, 14, SEC_ENDCAP, 0.00624465942382812500, 8.50512695312500000000);
+    addThresholds( 0,  4, 15, SEC_ENDCAP, 0.00770568847656250000, 10.11230468750000000000);
+    addThresholds( 1,  3,  4, SEC_ENDCAP, 0.00173950195312500000, 0.81323242187500000000);
+    addThresholds( 1,  3,  5, SEC_ENDCAP, 0.00442504882812500000, 1.23291015625000000000);
+    addThresholds( 1,  3, 11, SEC_ENDCAP, 0.00558471679687500000, 5.72119140625000000000);
+    addThresholds( 1,  3, 12, SEC_ENDCAP, 0.00519180297851562500, 6.19433593750000000000);
+    addThresholds( 1,  3, 13, SEC_ENDCAP, 0.00575637817382812500, 7.19091796875000000000);
+    addThresholds( 1,  3, 14, SEC_ENDCAP, 0.00707244873046875000, 7.69384765625000000000);
+    addThresholds( 1,  3, 15, SEC_ENDCAP, 0.01002883911132812500, 8.91235351562500000000);
+    addThresholds( 1,  4,  5, SEC_ENDCAP, 0.00331115722656250000, 0.80493164062500000000);
+    addThresholds( 1,  4, 12, SEC_ENDCAP, 0.00575256347656250000, 6.63671875000000000000);
+    addThresholds( 1,  4, 13, SEC_ENDCAP, 0.00526046752929687500, 7.41308593750000000000);
+    addThresholds( 1,  4, 14, SEC_ENDCAP, 0.00607299804687500000, 7.76953125000000000000);
+    addThresholds( 1,  4, 15, SEC_ENDCAP, 0.00779342651367187500, 7.99926757812500000000);
+    addThresholds( 3,  4,  5, SEC_ENDCAP, 0.00134277343750000000, 1.21142578125000000000);
+    addThresholds( 3,  4,  6, SEC_ENDCAP, 0.00341415405273437500, 2.15625000000000000000);
+    addThresholds( 3,  4,  7, SEC_ENDCAP, 0.00611495971679687500, 3.18896484375000000000);
+    addThresholds( 3,  4, 12, SEC_ENDCAP, 0.00630187988281250000, 6.79858398437500000000);
+    addThresholds( 3,  4, 13, SEC_ENDCAP, 0.00521850585937500000, 7.54370117187500000000);
+    addThresholds( 3,  4, 14, SEC_ENDCAP, 0.00571441650390625000, 8.86938476562500000000);
+    addThresholds( 3,  4, 15, SEC_ENDCAP, 0.00725173950195312500, 10.91772460937500000000);
 
-    //Hybrid
-    addThresholds( 0,  1,  2, SEC_HYBRID, 0.002266, 0.332948);
-    addThresholds( 0,  1,  8, SEC_HYBRID, 0.004518, 2.861103);
-    addThresholds( 0,  1,  9, SEC_HYBRID, 0.008576, 2.765429);
-    addThresholds( 0,  1, 10, SEC_HYBRID, 0.009470, 3.028944);
-    addThresholds( 0,  1, 11, SEC_HYBRID, 0.008760, 4.842227);
-    addThresholds( 0,  1, 12, SEC_HYBRID, 0.009025, 5.150895);
-    addThresholds( 0,  1, 13, SEC_HYBRID, 0.013822, 5.157996);
-    addThresholds( 0,  2,  8, SEC_HYBRID, 0.002430, 2.535672);
-    addThresholds( 0,  2,  9, SEC_HYBRID, 0.004603, 2.630091);
-    addThresholds( 0,  2, 10, SEC_HYBRID, 0.004610, 2.887653);
-    addThresholds( 0,  2, 11, SEC_HYBRID, 0.006391, 4.865986);
-    addThresholds( 0,  2, 12, SEC_HYBRID, 0.006385, 5.008283);
-    addThresholds( 0,  2, 13, SEC_HYBRID, 0.008599, 5.106528);
-    addThresholds( 1,  2,  8, SEC_HYBRID, 0.002456, 2.574467);
-    addThresholds( 1,  2,  9, SEC_HYBRID, 0.007859, 2.700417);
-    addThresholds( 1,  2, 10, SEC_HYBRID, 0.003278, 2.848935);
-    addThresholds( 1,  2, 11, SEC_HYBRID, 0.005641, 4.930833);
-    addThresholds( 1,  2, 12, SEC_HYBRID, 0.005814, 5.077612);
-    addThresholds( 1,  2, 13, SEC_HYBRID, 0.005388, 5.262541);
+    addThresholds( 0,  1,  2, SEC_BARREL, 0.00342941284179687500, 0.57543945312500000000);
+    addThresholds( 0,  1,  8, SEC_BARREL, 0.00617980957031250000, 2.71679687500000000000);
+    addThresholds( 0,  1,  9, SEC_BARREL, 0.01032638549804687500, 2.93017578125000000000);
+    addThresholds( 0,  1, 10, SEC_BARREL, 0.01612091064453125000, 3.89453125000000000000);
+    addThresholds( 0,  2,  8, SEC_BARREL, 0.00391769409179687500, 2.55566406250000000000);
+    addThresholds( 0,  2,  9, SEC_BARREL, 0.00702285766601562500, 2.69750976562500000000);
+    addThresholds( 0,  2, 10, SEC_BARREL, 0.01240158081054687500, 3.70800781250000000000);
+    addThresholds( 1,  2,  8, SEC_BARREL, 0.00452804565429687500, 2.60107421875000000000);
+    addThresholds( 1,  2,  9, SEC_BARREL, 0.00805282592773437500, 2.85424804687500000000);
+    addThresholds( 1,  2, 10, SEC_BARREL, 0.01434326171875000000, 4.43383789062500000000);
 
-    //Endcap
-    addThresholds( 0,  1,  3, SEC_ENDCAP, 0.003871, 0.455573);
-    addThresholds( 0,  1,  4, SEC_ENDCAP, 0.008008, 0.610674);
-    addThresholds( 0,  1,  5, SEC_ENDCAP, 0.001982, 0.502591);
-    addThresholds( 0,  1, 11, SEC_ENDCAP, 0.006242, 5.456658);
-    addThresholds( 0,  1, 12, SEC_ENDCAP, 0.006971, 6.008507);
-    addThresholds( 0,  1, 13, SEC_ENDCAP, 0.012287, 7.060206);
-    addThresholds( 0,  1, 14, SEC_ENDCAP, 0.017514, 7.984267);
-    addThresholds( 0,  1, 15, SEC_ENDCAP, 0.027412, 7.601592);
-    addThresholds( 0,  3,  4, SEC_ENDCAP, 0.002333, 0.790936);
-    addThresholds( 0,  3,  5, SEC_ENDCAP, 0.003576, 1.233592);
-    addThresholds( 0,  3,  6, SEC_ENDCAP, 0.004491, 1.925231);
-    addThresholds( 0,  3,  7, SEC_ENDCAP, 0.006731, 2.384964);
-    addThresholds( 0,  3, 11, SEC_ENDCAP, 0.004525, 5.417496);
-    addThresholds( 0,  3, 12, SEC_ENDCAP, 0.005669, 6.401115);
-    addThresholds( 0,  3, 13, SEC_ENDCAP, 0.005966, 6.933886);
-    addThresholds( 0,  3, 14, SEC_ENDCAP, 0.009222, 8.496601);
-    addThresholds( 0,  3, 15, SEC_ENDCAP, 0.015258, 10.029259);
-    addThresholds( 0,  4,  5, SEC_ENDCAP, 0.001593, 0.806697);
-    addThresholds( 0,  4,  6, SEC_ENDCAP, 0.002348, 0.894645);
-    addThresholds( 0,  4,  7, SEC_ENDCAP, 0.004056, 1.173814);
-    addThresholds( 0,  4, 12, SEC_ENDCAP, 0.005605, 6.305890);
-    addThresholds( 0,  4, 13, SEC_ENDCAP, 0.004358, 7.032155);
-    addThresholds( 0,  4, 14, SEC_ENDCAP, 0.006293, 8.210576);
-    addThresholds( 0,  4, 15, SEC_ENDCAP, 0.010423, 10.089836);
-    addThresholds( 1,  3,  4, SEC_ENDCAP, 0.001003, 0.734577);
-    addThresholds( 1,  3,  5, SEC_ENDCAP, 0.001096, 1.003146);
-    addThresholds( 1,  3, 11, SEC_ENDCAP, 0.004626, 5.441451);
-    addThresholds( 1,  3, 12, SEC_ENDCAP, 0.004657, 6.512224);
-    addThresholds( 1,  3, 13, SEC_ENDCAP, 0.005205, 6.785536);
-    addThresholds( 1,  3, 14, SEC_ENDCAP, 0.006592, 8.608834);
-    addThresholds( 1,  3, 15, SEC_ENDCAP, 0.007877, 6.975325);
-    addThresholds( 1,  4,  5, SEC_ENDCAP, 0.000597, 0.484591);
-    addThresholds( 1,  4, 12, SEC_ENDCAP, 0.004410, 6.162822);
-    addThresholds( 1,  4, 13, SEC_ENDCAP, 0.004339, 7.126968);
-    addThresholds( 1,  4, 14, SEC_ENDCAP, 0.006339, 7.569645);
-    addThresholds( 1,  4, 15, SEC_ENDCAP, 0.007153, 6.650499);
-    addThresholds( 3,  4,  5, SEC_ENDCAP, 0.000990, 1.185052);
-    addThresholds( 3,  4,  6, SEC_ENDCAP, 0.001868, 2.053982);
-    addThresholds( 3,  4,  7, SEC_ENDCAP, 0.003892, 3.117370);
-    addThresholds( 3,  4, 12, SEC_ENDCAP, 0.005585, 6.314577);
-    addThresholds( 3,  4, 13, SEC_ENDCAP, 0.004198, 7.300415);
-    addThresholds( 3,  4, 14, SEC_ENDCAP, 0.005310, 8.142437);
-    addThresholds( 3,  4, 15, SEC_ENDCAP, 0.006489, 11.085539);
-
+    addThresholds( 0,  1,  2, SEC_HYBRID, 0.00379562377929687500, 0.51196289062500000000);
+    addThresholds( 0,  1,  8, SEC_HYBRID, 0.00775527954101562500, 2.78686523437500000000);
+    addThresholds( 0,  1,  9, SEC_HYBRID, 0.01086807250976562500, 3.05126953125000000000);
+    addThresholds( 0,  1, 10, SEC_HYBRID, 0.01525878906250000000, 5.78320312500000000000);
+    addThresholds( 0,  1, 11, SEC_HYBRID, 0.01112365722656250000, 5.12768554687500000000);
+    addThresholds( 0,  1, 12, SEC_HYBRID, 0.01467132568359375000, 5.28295898437500000000);
+    addThresholds( 0,  1, 13, SEC_HYBRID, 0.02006149291992187500, 5.51098632812500000000);
+    addThresholds( 0,  2,  8, SEC_HYBRID, 0.00384140014648437500, 2.58593750000000000000);
+    addThresholds( 0,  2,  9, SEC_HYBRID, 0.00765609741210937500, 2.80224609375000000000);
+    addThresholds( 0,  2, 10, SEC_HYBRID, 0.01053619384765625000, 4.22973632812500000000);
+    addThresholds( 0,  2, 11, SEC_HYBRID, 0.00677490234375000000, 4.82226562500000000000);
+    addThresholds( 0,  2, 12, SEC_HYBRID, 0.00902557373046875000, 5.01293945312500000000);
+    addThresholds( 0,  2, 13, SEC_HYBRID, 0.01129150390625000000, 5.31420898437500000000);
+    addThresholds( 1,  2,  8, SEC_HYBRID, 0.00382232666015625000, 2.62939453125000000000);
+    addThresholds( 1,  2,  9, SEC_HYBRID, 0.00746154785156250000, 2.88012695312500000000);
+    addThresholds( 1,  2, 10, SEC_HYBRID, 0.01178359985351562500, 4.67285156250000000000);
+    addThresholds( 1,  2, 11, SEC_HYBRID, 0.00666427612304687500, 4.91992187500000000000);
+    addThresholds( 1,  2, 12, SEC_HYBRID, 0.00848007202148437500, 5.12963867187500000000);
+    addThresholds( 1,  2, 13, SEC_HYBRID, 0.01080703735351562500, 5.34667968750000000000);
+   
     //// End of Floating point Thresholds ////
   }
 }
@@ -444,30 +350,30 @@ Track* TCBuilder::createFittedTrack(vector <Hit*> &bestTC)
 
   // Now get the coordinates in the conformal space.
 
-  double sqR1  = binning((x1-x0)*(x1-x0)+(y1-y0)*(y1-y0), 13, 18, UNSIGNED);
-  double sqR2  = binning((x2-x0)*(x2-x0)+(y2-y0)*(y2-y0), 13, 18, UNSIGNED);
+  double sqR1  = CommonTools::binning((x1-x0)*(x1-x0)+(y1-y0)*(y1-y0), 13, 18, UNSIGNED);
+  double sqR2  = CommonTools::binning((x2-x0)*(x2-x0)+(y2-y0)*(y2-y0), 13, 18, UNSIGNED);
 
-  x1 = binning((x1-x0)/sqR1, -3, 18, SIGNED);
-  y1 = binning((y1-y0)/sqR1, -3, 18, SIGNED);
+  x1 = CommonTools::binning((x1-x0)/sqR1, -3, 18, SIGNED);
+  y1 = CommonTools::binning((y1-y0)/sqR1, -3, 18, SIGNED);
 
-  x2 = binning((x2-x0)/sqR2, -3, 18, SIGNED);
-  y2 = binning((y2-y0)/sqR2, -3, 18, SIGNED);
+  x2 = CommonTools::binning((x2-x0)/sqR2, -3, 18, SIGNED);
+  y2 = CommonTools::binning((y2-y0)/sqR2, -3, 18, SIGNED);
 
 
-  double mult_x1_y2 = binning(x1*y2, -8, 18, SIGNED);
-  double mult_x2_y1 = binning(x2*y1, -8, 18, SIGNED);
+  double mult_x1_y2 = CommonTools::binning(x1*y2, -8, 18, SIGNED);
+  double mult_x2_y1 = CommonTools::binning(x2*y1, -8, 18, SIGNED);
 
   // Now we got everything for the r/phi plane   
 
-  double sub_of_mult = binning(mult_x1_y2 - mult_x2_y1, -11, 18, SIGNED);
+  double sub_of_mult = CommonTools::binning(mult_x1_y2 - mult_x2_y1, -11, 18, SIGNED);
 
-  double divA = binning((y1-y2)/sub_of_mult, 17, 18, SIGNED);
-  double divB = binning((x2-x1)/sub_of_mult, 17, 18, SIGNED);
+  double divA = CommonTools::binning((y1-y2)/sub_of_mult, 17, 18, SIGNED);
+  double divB = CommonTools::binning((x2-x1)/sub_of_mult, 17, 18, SIGNED);
 
-  double a = binning(x0-0.5*divA, 17, 18, SIGNED);
-  double b = binning(y0-0.5*divB, 17, 18, SIGNED);
+  double a = CommonTools::binning(x0-0.5*divA, 17, 18, SIGNED);
+  double b = CommonTools::binning(y0-0.5*divB, 17, 18, SIGNED);
 
-  double a2_b2 = binning(a*a + b*b, 29, 18, UNSIGNED);
+  double a2_b2 = CommonTools::binning(a*a + b*b, 29, 18, UNSIGNED);
 
   pt_est  = 0.003*3.833*sqrt(a2_b2);
 
@@ -536,81 +442,6 @@ Track* TCBuilder::createFittedTrack(vector <Hit*> &bestTC)
   return fit_track;
 }
 
-/* Function which simulate the HardWare representation of the values : manage UNSIGNED and SIGNED (2's complement) overflows and accuracy according to the available dynamic of the binary word */
-double TCBuilder::binning(double fNumber, int nMSBpowOfTwo, int nBits, HW_SIGN_TYPE signType)
-{
-  if (!m_bHardwareSimulation)
-    //If the Hardware binning simulation is not asked, return directly the original number
-    return fNumber;
-
-  if (signType == UNSIGNED && fNumber < 0)
-    {
-      //Bad interpretation, a negative number is stored in an UNSIGNED format (sign lost)
-      fNumber = -fNumber;
-    }
-  
-  int nLSBpowOfTwo;
-	
-  //Process the power of two of the LSB for the binary representation
-  if (signType == UNSIGNED)
-    {
-      //If UNSIGNED
-      nLSBpowOfTwo = nMSBpowOfTwo - (nBits-1);
-    }	
-  else
-    {
-      //If SIGNED, 1 bit is used for the sign
-      nLSBpowOfTwo = nMSBpowOfTwo - (nBits-2);
-    }
-
-  /* Accuracy Simulation */
-
-  //Divide the number by the power of two of the LSB => the integer part of the new number is the value we are looking for
-  fNumber = fNumber / pow(2, nLSBpowOfTwo);
-	
-  //Remove the fractionnal part by rounding down (for both positive and negative values), this simulate the HW truncature
-  fNumber = floor(fNumber);
-	
-  //Multiply the number by the power of two of the LSB to get the correct float value
-  fNumber = fNumber * pow(2, nLSBpowOfTwo);
-
-
-  double fBinnedNumber = fNumber;
-
-  /* Overflow Simulation */
-
-  if (signType == UNSIGNED)
-    {
-      //If the number is in UNSIGNED representation
-      fNumber = fmod(fNumber, pow(2, nMSBpowOfTwo+1));
-    }
-  else
-    {
-      //If the number is in SIGNED representation (2's complement)
-      
-      double fTempResult = fNumber - pow(2, nMSBpowOfTwo+1); //substract the possible range to the number
-
-      if (fTempResult >= 0)
-        {
-          //If there is an overflow, it's a positive one
-          fNumber = fmod(fTempResult, pow(2, nMSBpowOfTwo+2)) - pow(2, nMSBpowOfTwo+1);
-        }
-      else
-        {
-          //If there is an overflow, it's a negative one (2's complement format has an asymetric range for positive and negative values)
-          fNumber = fmod(fTempResult + pow(2, nLSBpowOfTwo), pow(2, nMSBpowOfTwo+2)) - pow(2, nLSBpowOfTwo) + pow(2, nMSBpowOfTwo+1);
-        }
-    }
-
-  //If the new number is different from the previous one, an HW overflow occured
-  if (fNumber != fBinnedNumber)
-    {
-      cout<<"WARNING HW overflow for the value : "<<fBinnedNumber<<" resulting value : "<<fNumber<<" (diff= "<<fBinnedNumber-fNumber<<")"<<endl;
-    }
-	
-  return fNumber;
-}
-
 /* Process the alignment scores (on RPHI and on RZ plan) between the 2 seeds and an other stub */
 void TCBuilder::alignScore(Hit& hSeed1, Hit& hSeed2, Hit& hTestStub, double tScores[])
 {
@@ -619,6 +450,8 @@ void TCBuilder::alignScore(Hit& hSeed1, Hit& hSeed2, Hit& hTestStub, double tSco
   double X1, Y1, Z1, R1, PHI1;
   double X2, Y2, Z2, R2, PHI2;
   double X3, Y3, Z3, R3, PHI3;
+
+  double result_R, result_PHI;
 
   double RPHI_S1, RPHI_S2, RZ_S1, RZ_S2;
 
@@ -635,25 +468,47 @@ void TCBuilder::alignScore(Hit& hSeed1, Hit& hSeed2, Hit& hTestStub, double tSco
   Y3 = hTestStub.getY();
   Z3 = hTestStub.getZ();
 	
-  R1 = binning(sqrt(X1*X1 + Y1*Y1), 6, 18, SIGNED);
-  R2 = binning(sqrt(X2*X2 + Y2*Y2), 6, 18, SIGNED);
-  R3 = binning(sqrt(X3*X3 + Y3*Y3), 6, 18, SIGNED);
+  /*
+
+  //Old way
+
+  R1 = CommonTools::binning(sqrt(X1*X1 + Y1*Y1), 6, 18, SIGNED);
+  R2 = CommonTools::binning(sqrt(X2*X2 + Y2*Y2), 6, 18, SIGNED);
+  R3 = CommonTools::binning(sqrt(X3*X3 + Y3*Y3), 6, 18, SIGNED);
 
   //RPHI plan
-  PHI1 = binning(atan(Y1/X1), 4, 18, SIGNED);
-  PHI2 = binning(atan(Y2/X2), 4, 18, SIGNED);
-  PHI3 = binning(atan(Y3/X3), 4, 18, SIGNED);
+  PHI1 = CommonTools::binning(atan(Y1/X1), 0, 17, SIGNED);
+  PHI2 = CommonTools::binning(atan(Y2/X2), 0, 17, SIGNED);
+  PHI3 = CommonTools::binning(atan(Y3/X3), 0, 17, SIGNED);
+  */
 
-  RPHI_S1 = binning((PHI2 - PHI1) * (R3 - R2), 8, 20, SIGNED);
-  RPHI_S2 = binning((PHI2 - PHI3) * (R2 - R1), 8, 20, SIGNED);
+  //New bitwise way to get the polar coordinates
+  CommonTools::binCordic(X1, Y1, result_R, result_PHI);
+  R1 = result_R;
+  PHI1 = result_PHI;
+  
+  CommonTools::binCordic(X2, Y2, result_R, result_PHI);
+  R2 = result_R;
+  PHI2 = result_PHI;
 
-  fRPHI_Score = binning(fabs(RPHI_S1 + RPHI_S2), 7, 18, UNSIGNED);
+  CommonTools::binCordic(X3, Y3, result_R, result_PHI);
+  R3 = result_R;
+  PHI3 = result_PHI;
+
+  //cout<<"Polar "<<hSeed1.getID()<<" : "<<R1<<"/"<<PHI1<<"/"<<Z1<<endl;
+  //cout<<"Polar "<<hSeed2.getID()<<" : "<<R2<<"/"<<PHI2<<"/"<<Z2<<endl;
+  //cout<<"Polar "<<hTestStub.getID()<<" : "<<R3<<"/"<<PHI3<<"/"<<Z3<<endl;
+
+  RPHI_S1 = CommonTools::binning((PHI2 - PHI1) * (R3 - R2), 8, 20, SIGNED);
+  RPHI_S2 = CommonTools::binning((PHI2 - PHI3) * (R2 - R1), 8, 20, SIGNED);
+
+  fRPHI_Score = CommonTools::binning(fabs(RPHI_S1 + RPHI_S2), 7, 18, UNSIGNED);
 
   //RZ plan
-  RZ_S1 = binning((Z2 - Z1) * (R3 - R2), 12, 20, SIGNED);
-  RZ_S2 = binning((Z2 - Z3) * (R2 - R1), 12, 20, SIGNED);
+  RZ_S1 = CommonTools::binning((Z2 - Z1) * (R3 - R2), 12, 20, SIGNED);
+  RZ_S2 = CommonTools::binning((Z2 - Z3) * (R2 - R1), 12, 20, SIGNED);
 
-  fRZ_Score = binning(fabs(RZ_S1 + RZ_S2), 10, 18, UNSIGNED);
+  fRZ_Score = CommonTools::binning(fabs(RZ_S1 + RZ_S2), 10, 18, UNSIGNED);
 
   tScores[0] = fRPHI_Score;
   tScores[1] = fRZ_Score;
@@ -765,6 +620,8 @@ void TCBuilder::fit(vector<Hit*> originalHits, int pattern_id)
 
   int tow = sector_id; // The tower ID, necessary to get the phi shift
 
+  int nseeds=0;
+
   SEC_TYPE currentSec;
 
   //Get the sec_type from the sector_id
@@ -796,19 +653,23 @@ void TCBuilder::fit(vector<Hit*> originalHits, int pattern_id)
       
       /**************** FROM LOCAL TO GLOBAL COORDINATES ****************/
       vector<float> coords;
-      if(l2gConverter!=NULL)
+      if(l2gConverter!=NULL){
 	coords = l2gConverter->toGlobal(pOrigHit);
+	rotatedX = coords[0];
+	rotatedY = coords[1];
+      }
       else{
 	// If we do not have a converter, use the coordinates from CMSSW
 	coords.push_back(pOrigHit->getX());
 	coords.push_back(pOrigHit->getY());
 	coords.push_back(pOrigHit->getZ());
+	//Process the rotated coordinnates
+	rotatedX = coords[0] * ci - coords[1] * si;
+	rotatedY = coords[0] * si + coords[1] * ci;
       }
       /*****************************************************************/
 
-      //Process the rotated coordinnates
-      rotatedX = coords[0] * ci - coords[1] * si;
-      rotatedY = coords[0] * si + coords[1] * ci;
+      //cout<<"Cartesian "<<pOrigHit->getID()<<" : "<<CommonTools::binning(rotatedX, 6, 18, SIGNED)<<"/"<<CommonTools::binning(rotatedY, 6, 18, SIGNED)<<"/"<<CommonTools::binning((double)coords[2], 8, 18, SIGNED)<<endl;
 
       //Add the modified hit to the hits vector
       hits.push_back( Hit(transcodeLayer(pOrigHit),
@@ -822,15 +683,14 @@ void TCBuilder::fit(vector<Hit*> originalHits, int pattern_id)
 			  pOrigHit->getParticuleIP(),
 			  pOrigHit->getParticuleETA(),
 			  pOrigHit->getParticulePHI0(),
-			  binning(rotatedX, 6, 18, SIGNED),
-			  binning(rotatedY, 6, 18, SIGNED),
-			  binning((double)coords[2], 8, 18, SIGNED),
+			  CommonTools::binning(rotatedX, 6, 18, SIGNED),
+			  CommonTools::binning(rotatedY, 6, 18, SIGNED),
+			  CommonTools::binning((double)coords[2], 8, 18, SIGNED),
 			  pOrigHit->getX0(),
 			  pOrigHit->getY0(),
 			  pOrigHit->getZ0(),
 			  pOrigHit->getBend())
 		      );
-
     }
 
   //Sort the hits by ascending order of layerID
@@ -838,14 +698,12 @@ void TCBuilder::fit(vector<Hit*> originalHits, int pattern_id)
   sort(hits.begin(), hits.end(), [ ]( const Hit& lhs, const Hit& rhs ) { return lhs.getLayer() < rhs.getLayer(); });
 
 
-  int nLayersCurrentPattern = 0;
   int lastAddedLayer = -1;
   //Count the number of layers present in the pattern
   for (unsigned int hitIndex=0; hitIndex < hits.size(); hitIndex++)
     {
       if (lastAddedLayer != hits[hitIndex].getLayer())
 	{
-	  nLayersCurrentPattern++;
 	  lastAddedLayer = hits[hitIndex].getLayer();
 	}
     }
@@ -868,7 +726,7 @@ void TCBuilder::fit(vector<Hit*> originalHits, int pattern_id)
       //We have a correct Seed1
 
       //Get the radius of the seed1
-      double fRseed1 = binning(sqrt(hSeed1.getX()*hSeed1.getX() + hSeed1.getY()*hSeed1.getY()), 6, 18, SIGNED);
+      double fRseed1 = CommonTools::binning(sqrt(hSeed1.getX()*hSeed1.getX() + hSeed1.getY()*hSeed1.getY()), 6, 18, SIGNED);
 
       for (unsigned int seed2Index = seed1Index+1; seed2Index<hits.size(); seed2Index++)
 	{
@@ -878,11 +736,13 @@ void TCBuilder::fit(vector<Hit*> originalHits, int pattern_id)
 	  if (nLaySeed1 == nLaySeed2) continue; //The seed layers have to be differents
 	  if (nLaySeed2 > 4) break;             //no more possible combinations for the current seed1
 
+	  ++nseeds;
+	  if (nseeds>maxseeds && maxseeds>0) break;
 
 	  //We have a correct Seed1/Seed2 combination !!!
 
 	  //Get the radius of the seed2
-	  double fRseed2 = binning(sqrt(hSeed2.getX()*hSeed2.getX() + hSeed2.getY()*hSeed2.getY()), 6, 18, SIGNED);
+	  double fRseed2 = CommonTools::binning(sqrt(hSeed2.getX()*hSeed2.getX() + hSeed2.getY()*hSeed2.getY()), 6, 18, SIGNED);
 
 	  //Current candidate initialization (the 2 seeds)
 	  vecCurrentCandidateHits.clear();
@@ -912,8 +772,8 @@ void TCBuilder::fit(vector<Hit*> originalHits, int pattern_id)
 
 
 	      //Process the real thresholds from the normalized one stored in the LUT
-	      double fThreshRPHI = binning(fabs(tabNormThresh[0] * (fRseed2 - fRseed1)), 4, 18, SIGNED);
-	      double fThreshRZ = binning(fabs(tabNormThresh[1] * (fRseed2 - fRseed1)), 8, 18, SIGNED);
+	      double fThreshRPHI = CommonTools::binning(fabs(tabNormThresh[0] * (fRseed2 - fRseed1)), 4, 18, SIGNED);
+	      double fThreshRZ = CommonTools::binning(fabs(tabNormThresh[1] * (fRseed2 - fRseed1)), 8, 18, SIGNED);
 
 	      if (tabScore[0] <= fThreshRPHI && tabScore[1] <= fThreshRZ)
 		{
@@ -934,16 +794,9 @@ void TCBuilder::fit(vector<Hit*> originalHits, int pattern_id)
 		}
 	    }
 
-	  //If the current candidate own more than 6 stubs, the lasts (outtermost) are removed
-	  while (vecCurrentCandidateHits.size() > 6)
-	    {
-	      vecCurrentCandidateHits.pop_back();
-	      vecCurrentCandidateScore.pop_back();
-	    }
-
 	  //All the stubs have been tested for the current Seeds combination
 
-	  if (int(vecCurrentCandidateHits.size()) >= nLayersCurrentPattern - m_nMissingHits)
+	  if (vecCurrentCandidateHits.size() >= m_minimum_number_for_TC)
 	    {
 	      //The current candidate has enough stubs to be a candidate
  
@@ -967,9 +820,14 @@ void TCBuilder::fit(vector<Hit*> originalHits, int pattern_id)
 
   //All the Seeds combinations have been tested
 
-  if ( (currentSec == SEC_HYBRID && vecBestCandidateHits.size() >= 4) || vecBestCandidateHits.size() >= 5 )
+  if ( vecBestCandidateHits.size() >= m_minimum_number_for_TC )
     {
       //If there is a recorded best candidate
+
+      //If the candidate owns more than 6 stubs, the outtermost ones are removed
+      while (vecBestCandidateHits.size() > 6){
+	vecBestCandidateHits.pop_back();
+      }
 
       // If we have a 6 stubs TC with a stub on the last endcap disk -> we remove it
       // The 5 stubs TC will be easier to handle for the PCA
@@ -992,6 +850,7 @@ void TCBuilder::fit(vector<Hit*> originalHits, int pattern_id)
 void TCBuilder::fit(){
   for(unsigned int i=0;i<patterns.size();i++){
     vector<Hit*> allHits = patterns[i]->getHits();
+    setPatternSize(patterns[i]->getNbLayers()-patterns[i]->getNbFakeSuperstrips());
     fit(allHits, patterns[i]->getOrderInChip());
   }
 }

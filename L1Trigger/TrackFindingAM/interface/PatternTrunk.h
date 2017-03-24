@@ -30,6 +30,8 @@ class PatternTrunk{
   **/
   PatternTrunk(Pattern* p);
 
+  PatternTrunk(GradedPattern* p);
+
   /**
      \brief Default constructor
   **/
@@ -45,7 +47,7 @@ class PatternTrunk{
      \brief Add a new full definition pattern to the structure and update the average pt of this pattern
      Increment the low definition pattern grade. If the FD pattern is already contained, increments the grade.
   **/
-  void addFDPattern(Pattern* p, float pt);
+  void addFDPattern(Pattern* p, float pt, int pdg);
 
 
   /**
@@ -100,12 +102,6 @@ class PatternTrunk{
 #endif
 
   /**
-     \brief Change the DC bits of the LDP to take the parameter's DC bits into account (used while merging banks)
-     \param p A new pattern
-  **/
-  void updateDCBits(GradedPattern* p);
-
-  /**
      \brief Returns a copy of the active pattern
      \param active_threshold The minimum number of active super strips to activate the pattern
      \return A pointer on the copy
@@ -136,12 +132,27 @@ class PatternTrunk{
      \return The theoretical order in the chip
    **/
   int getOrderInChip() const;
+  /**
+     \brief Update the data and the DC bits of the LDP according to the parameter
+     \param gp The new pattern
+   **/
+  void updateWithPattern(GradedPattern* gp);
 
  private:
   GradedPattern* lowDefPattern;
   map<string, GradedPattern*> fullDefPatterns;
 
   void deleteFDPatterns();
+  /**
+     \brief Change the DC bits of the LDP to take the parameter's DC bits into account (used while merging banks)
+     \param p A new pattern
+  **/
+  void updateDCBits(GradedPattern* p);
+  /**
+     \brief Update the data of the LDP with the parameters of the new pattern
+     \param p A new pattern
+  **/
+  void updatePatternData(const GradedPattern& p);
 
   friend class boost::serialization::access;
   

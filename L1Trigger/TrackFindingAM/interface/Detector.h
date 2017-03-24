@@ -29,6 +29,10 @@ class Detector{
   int getLayerPosition(int pos);
   
  public:
+
+  static int hw_limit_stub_per_layer;
+  static void setHWPatternLimitations(int t);
+
   /**
      \brief Constructor.
      Creates an empty detector (no layer).

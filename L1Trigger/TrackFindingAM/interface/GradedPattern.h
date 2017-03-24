@@ -19,9 +19,16 @@ class GradedPattern : public Pattern{
   **/
   GradedPattern();
   /**
+     \brief Constructor
+  **/
+  GradedPattern(int nbLayers);
+  /**
      \brief Copy Constructor
   **/
   GradedPattern(const Pattern& p);
+  GradedPattern(const GradedPattern& p);
+
+  virtual ~GradedPattern(){};
   /**
      \brief Get the grade of the Pattern
      \return The number of tracks having generated the pattern
@@ -33,24 +40,46 @@ class GradedPattern : public Pattern{
   **/
   float getAveragePt() const;
   /**
+     \brief Get the minimal Pt of the tracks having generated the pattern
+     \return The minimal Pt
+  **/
+  float getMinPt() const;
+  /**
+     \brief Get the maximal Pt of the tracks having generated the pattern
+     \return The maximal Pt
+  **/
+  float getMaxPt() const;
+  /**
+     \brief Get the charge of the generating particles
+     \return -1 for PDG<0, 1 for PDG>0, 0 if different charge were used
+  **/
+  int getCharge() const;
+  /**
      Increment the grade (tracks occurences + 1)
   **/
   void increment();
   /**
-     Increment the grade (tracks occurences + 1) and add a Pt value to the average Pt
+     Increment the grade (tracks occurences + 1), add a Pt value to the average Pt, add the charge according to the PDG
      @param pt The Pt value of the last track
   **/
-  void increment(float pt);
+  void increment(float pt, int pdg);
   /**
      \brief Allows to compare 2 patterns on their grade
      \param gp The second pattern
      \return -1 if the pattern has a lower grade
   **/
   int operator<(const GradedPattern& gp);
+  /**
+     \brief Update the data of the pattern according to the data of the argument
+   **/
+  void mergeData(const GradedPattern& gp);
 
  private:
   int grade;
   float averagePt;
+  float minPT;
+  float maxPT;
+  int charge;
 
   friend class boost::serialization::access;
   
@@ -58,15 +87,24 @@ class GradedPattern : public Pattern{
     ar << boost::serialization::base_object<Pattern>(*this);
     ar << grade;
     ar << averagePt;
+    ar << minPT;
+    ar << maxPT;
+    ar << charge;
   }
   
   template<class Archive> void load(Archive & ar, const unsigned int version){
     ar >> boost::serialization::base_object<Pattern>(*this);
     ar >> grade;
     ar >> averagePt;
+    if(version>0){
+      ar >> minPT;
+      ar >> maxPT;
+      ar >> charge;
+    }
   }
   
   BOOST_SERIALIZATION_SPLIT_MEMBER()
 
 };
+BOOST_CLASS_VERSION(GradedPattern, 1)
 #endif

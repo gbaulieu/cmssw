@@ -1,8 +1,10 @@
 #ifndef _LOCALTOGLOBALCONVERTER_H_
 #define _LOCALTOGLOBALCONVERTER_H_
 
-#include <math.h>
-#include "Sector.h"
+#include <vector>
+#include <stdexcept>
+#include "CommonTools.h"
+#include "Hit.h"
 
 using namespace std;
 
@@ -11,7 +13,7 @@ using namespace std;
  **/
 class LocalToGlobalConverter{
 
- private:
+ protected:
   /**
      module_pos[prbf2_layer][prbf2_ladder][prbf2_module] contains 
      [
@@ -26,40 +28,37 @@ class LocalToGlobalConverter{
      seg_pitch_Z
      ]
   **/
-  vector<float> ***module_pos;
   //TEC+ or TEC-?
   bool tracker_side;
-  const Sector* sector;
 
  public:
   /**
-     \brief Constructor
-     \param sectorDefinition The sector concerned by the convertion
-     \param geometryFile Text file containing the global coordinates of all modules
+     \brief Default constructor of the abstract class
   **/
-  LocalToGlobalConverter(const Sector* sectorDefinition, string geometryFile);
+  LocalToGlobalConverter();
 
   /**
      \brief Destructor
   **/
-  ~LocalToGlobalConverter();
+  virtual ~LocalToGlobalConverter();
 
   /**
-     \brief Convertion of local coordinates (from PRBF2 format) to cartesian coordinates global to the tracker
-     \param layer The PRBF2 value of the layer (0 to 15)
-     \param ladder The PRBF2 value of the ladder (position of the ladder in the trigger tower)
-     \param module The PRBF2 value of the module (position of the module in the ladder for the current trigger tower)
-     \param segment ThE PRBF2 CIC bit for 2S modules, the PRBF2 CIC bit concatenated with the PRBF2 Z bits value for PS modules
-     \param strip The PRBF2 strip value
+     \brief Convertion of local coordinates (layer/ladder/module/segment/strip) to cartesian coordinates global to the tracker. Whether you need PRBF2 or CMSSW local values relies upon the underlying implementation.
+     \param layer The layer information
+     \param ladder The ladder information
+     \param module The module information
+     \param segment The segment information
+     \param strip The strip information
      \return A vector of 3 float containing the X/Y/Z cartesian coordinates
    **/
-  vector<float> toGlobal(int layer, int ladder, int module, int segment, float strip) const throw (std::runtime_error);
+  virtual vector<float> toGlobal(int layer, int ladder, int module, int segment, float strip) const throw (std::runtime_error) =0;
 
   /**
      \brief Convertion of local coordinates contained in a Hit object to cartesian coordinates global to the tracker
      \param h A Hit object
      \return A vector of 3 float containing the X/Y/Z cartesian coordinates
    **/
-  vector<float> toGlobal(const Hit* h) const throw (std::runtime_error);
+  virtual vector<float> toGlobal(const Hit* h) const throw (std::runtime_error) =0;
+
 };
 #endif

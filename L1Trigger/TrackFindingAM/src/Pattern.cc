@@ -1,4 +1,5 @@
 #include "../interface/Pattern.h"
+#include "../interface/Detector.h"
 
 Pattern::Pattern(int nb){
   nb_layer = nb;
@@ -48,21 +49,6 @@ Pattern::Pattern(const Pattern& p){
       }
     }
   }
-}
-
-Pattern::~Pattern(){
-  if(nb_strips!=NULL){
-    delete [] nb_strips;
-  }
-  for(int i=0;i<nb_layer;i++){
-    if(layer_strips[i]!=NULL)
-      delete layer_strips[i];
-    if(strips!=NULL)
-      delete [] strips[i];
-  }
-  delete [] strips;
-  strips = NULL;
-  nb_strips = NULL;
 }
 
 void Pattern::setLayerStrip(int layer, PatternLayer* strip){
@@ -123,7 +109,7 @@ bool Pattern::isActiveUsingMissingHit(int nb_allowed_missing_hit, int active_thr
     return false;
 }
 
-string Pattern::getKey(){
+string Pattern::getKey() const{
   string key="";
   for(int i=0;i<nb_layer;i++){
     key.append(layer_strips[i]->getCode());
@@ -181,13 +167,15 @@ void Pattern::linkCuda(patternBank* p, deviceDetector* d, int pattern_index, con
 }
 #endif
 
+bool compareHits(Hit* h1, Hit* h2){
+  return h1->getID()<h2->getID();
+}
+
 vector<Hit*> Pattern::getHits(){
   vector<Hit*> hits;
   for(int i=0;i<nb_layer;i++){
-    for(int j=0;j<(int)nb_strips[i];j++){
-      vector<Hit*> l_hits = strips[i][j]->getHits();
-      hits.insert(hits.end(), l_hits.begin(), l_hits.end());
-    }
+    vector<Hit*> local_hits=getHits(i);
+    hits.insert(hits.end(),local_hits.begin(),local_hits.end());
   }
   return hits;
 }
@@ -199,6 +187,10 @@ vector<Hit*> Pattern::getHits(int layerPosition){
       vector<Hit*> l_hits = strips[layerPosition][j]->getHits();
       hits.insert(hits.end(), l_hits.begin(), l_hits.end());
     }
+  }
+  sort(hits.begin(),hits.end(),compareHits);
+  if(Detector::hw_limit_stub_per_layer>0 && (int)hits.size()>Detector::hw_limit_stub_per_layer){ 
+    hits.erase (hits.begin()+Detector::hw_limit_stub_per_layer,hits.end());
   }
   return hits;
 }

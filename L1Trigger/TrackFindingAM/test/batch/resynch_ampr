@@ -1,0 +1,10 @@
+#PGun muons
+
+#source AMPRonly_batch.sh MU_TILT_lowPT_noSWcut_910_310317 NOTUSED /afs/cern.ch/work/s/sviret/public/PatternBanks/Test/Tilt_Pt 5000 5000 auto:run2_mc BATCH
+
+source AMPR_parallel.sh /data/viret/100X/ForAM 100_test /data/viret/Bank_10_0_0 4 4 auto:run2_mc 10 10
+
+source AMPR_parallel.sh /dpm/in2p3.fr/home/cms/data/store/user/sviret/SLHC/GEN/ELE_PU0_TILT_Ele_SW140_CMSSW10 100_test_ele /data/viret/Bank_10_0_0 100 100 auto:run2_mc 10 10
+
+
+

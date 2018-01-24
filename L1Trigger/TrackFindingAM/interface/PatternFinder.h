@@ -10,7 +10,6 @@
 #include "SectorTree.h"
 #include "PRBF2LocalToGlobalConverter.h"
 #include "CMSSWLocalToGlobalConverter.h"
-#include "LinearizedTrackFitter.h"
 
 #ifdef IPNL_USE_CUDA
 #include "gpu.h"
@@ -104,12 +103,6 @@ class PatternFinder{
      \param f The name of the file
   **/
   void setEventsFile(string& f);
-  /**
-     \brief Look for active patterns in events
-     \param start The search will start from this event number
-     \param stop The search will end at this event number
-  **/
-  void find(int start, int& stop);
 
 #ifdef IPNL_USE_CUDA
   /**

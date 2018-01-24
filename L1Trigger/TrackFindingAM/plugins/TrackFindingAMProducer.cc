@@ -158,7 +158,9 @@ TrackFindingAMProducer::TrackFindingAMProducer( const edm::ParameterSet& iConfig
     }
   }
 
-  m_pf = new PatternFinder( nThresh, &m_st, "", "" );
+  string ifile="";
+  string ofile="";
+  m_pf = new PatternFinder( nThresh, &m_st, ifile, ofile );
 
   if(nMissingHits>-1)
   {
